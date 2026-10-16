@@ -188,21 +188,58 @@ function drawFood() {
   const x = food.x * gridSize + gridSize / 2;
   const y = food.y * gridSize + gridSize / 2;
   const radius = gridSize / 2 - 2;
+  const pulse = 1 + Math.sin(Date.now() * 0.01) * 0.18;
 
-  const glow = ctx.createRadialGradient(x, y, 3, x, y, radius + 8);
-  glow.addColorStop(0, '#ff9ca4');
-  glow.addColorStop(0.4, '#ff3131');
-  glow.addColorStop(1, '#7d0d17');
+  ctx.save();
+  ctx.translate(x, y);
+
+  ctx.shadowBlur = 25;
+  ctx.shadowColor = '#ff4d8d';
+
+  const glow = ctx.createRadialGradient(0, 0, 2, 0, 0, radius * 2.4);
+  glow.addColorStop(0, '#fff7ff');
+  glow.addColorStop(0.18, '#ffd9f2');
+  glow.addColorStop(0.4, '#ff4d8d');
+  glow.addColorStop(0.75, '#ff1f6d');
+  glow.addColorStop(1, '#7a0737');
 
   ctx.fillStyle = glow;
   ctx.beginPath();
-  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.arc(0, 0, radius * pulse, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(x - 4, y - 4, radius * 0.25, 0, Math.PI * 2);
+  ctx.arc(0, 0, radius * 1.15, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.fillStyle = 'rgba(255, 250, 200, 0.9)';
+  ctx.beginPath();
+  ctx.moveTo(0, -radius * 0.65);
+  ctx.lineTo(radius * 0.7, 0);
+  ctx.lineTo(0, radius * 0.65);
+  ctx.lineTo(-radius * 0.7, 0);
+  ctx.closePath();
   ctx.fill();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.fillRect(-2, -radius * 1.1, 4, radius * 0.7);
+  ctx.fillRect(-radius * 1.1, -2, radius * 0.7, 4);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(-radius * 0.5, -radius * 0.8);
+  ctx.lineTo(-radius * 0.2, -radius * 0.3);
+  ctx.lineTo(-radius * 0.55, radius * 0.15);
+  ctx.moveTo(radius * 0.55, -radius * 0.8);
+  ctx.lineTo(radius * 0.2, -radius * 0.3);
+  ctx.lineTo(radius * 0.55, radius * 0.15);
+  ctx.stroke();
+
+  ctx.restore();
 }
 
 function drawBodySegment(segmentX, segmentY, isHead = false) {

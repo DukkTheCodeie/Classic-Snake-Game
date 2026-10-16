@@ -184,6 +184,77 @@ let highScore = 0;
 let gameInterval = null;
 let speed = 100;
 
+function drawFood() {
+  const x = food.x * gridSize + gridSize / 2;
+  const y = food.y * gridSize + gridSize / 2;
+  const radius = gridSize / 2 - 2;
+
+  const glow = ctx.createRadialGradient(x, y, 3, x, y, radius + 8);
+  glow.addColorStop(0, '#ff9ca4');
+  glow.addColorStop(0.4, '#ff3131');
+  glow.addColorStop(1, '#7d0d17');
+
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.beginPath();
+  ctx.arc(x - 4, y - 4, radius * 0.25, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawBodySegment(segmentX, segmentY, isHead = false) {
+  const x = segmentX * gridSize + 1;
+  const y = segmentY * gridSize + 1;
+  const size = gridSize - 2;
+
+  if (isHead) {
+    const headGradient = ctx.createLinearGradient(x, y, x + size, y + size);
+    headGradient.addColorStop(0, '#b7ff7a');
+    headGradient.addColorStop(0.35, '#55ff88');
+    headGradient.addColorStop(1, '#1bcf73');
+
+    ctx.fillStyle = headGradient;
+    ctx.fillRect(x, y, size, size);
+
+    ctx.fillStyle = 'rgba(10, 16, 20, 0.6)';
+    ctx.fillRect(x + 3, y + 2, 5, 5);
+    ctx.fillRect(x + size - 8, y + 2, 5, 5);
+
+    ctx.fillStyle = '#f6fffe';
+    const pupilOffsetX = dx === 1 ? 2 : dx === -1 ? -2 : 0;
+    const pupilOffsetY = dy === 1 ? 2 : dy === -1 ? -2 : 0;
+
+    ctx.fillRect(x + 4 + pupilOffsetX, y + 4 + pupilOffsetY, 2, 2);
+    ctx.fillRect(x + size - 6 + pupilOffsetX, y + 4 + pupilOffsetY, 2, 2);
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.fillRect(x + 3, y + 3, 4, 3);
+    ctx.fillRect(x + size - 7, y + 3, 4, 3);
+
+    return;
+  }
+
+  const bodyGradient = ctx.createLinearGradient(x, y, x + size, y + size);
+  bodyGradient.addColorStop(0, '#67ffd5');
+  bodyGradient.addColorStop(0.5, '#21e6b2');
+  bodyGradient.addColorStop(1, '#00b7d8');
+
+  ctx.fillStyle = bodyGradient;
+  ctx.fillRect(x, y, size, size);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  ctx.fillRect(x + 2, y + 2, size * 0.25, 3);
+  ctx.fillRect(x + size * 0.56, y + 2, size * 0.18, 3);
+
+  ctx.fillStyle = 'rgba(15, 25, 35, 0.18)';
+  for (let i = 0; i < 3; i++) {
+    ctx.fillRect(x + 4 + i * 5, y + size - 5, 2, 3);
+  }
+}
+
 function drawGame() {
   dx = nextDx;
   dy = nextDy;
@@ -223,21 +294,28 @@ function drawGame() {
   ctx.fillStyle = '#05060a';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  // Draw subtle grid
+  ctx.strokeStyle = 'rgba(0, 240, 255, 0.06)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= tileCount; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * gridSize, 0);
+    ctx.lineTo(i * gridSize, canvas.height);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(0, i * gridSize);
+    ctx.lineTo(canvas.width, i * gridSize);
+    ctx.stroke();
+  }
+
   // Draw snake
   snake.forEach((part, index) => {
-    ctx.fillStyle = index === 0 ? '#39ff14' : '#00f0ff';
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = index === 0 ? '#39ff14' : '#00f0ff';
-    ctx.fillRect(part.x * gridSize + 1, part.y * gridSize + 1, gridSize - 2, gridSize - 2);
+    drawBodySegment(part.x, part.y, index === 0);
   });
-  ctx.shadowBlur = 0;
 
   // Draw food
-  ctx.fillStyle = '#ff3131';
-  ctx.shadowBlur = 15;
-  ctx.shadowColor = '#ff3131';
-  ctx.fillRect(food.x * gridSize + 1, food.y * gridSize + 1, gridSize - 2, gridSize - 2);
-  ctx.shadowBlur = 0;
+  drawFood();
 }
 
 function placeFood() {
@@ -303,10 +381,12 @@ function startGame() {
   score = 0;
   scoreEl.textContent = score;
   placeFood();
+  drawGame();
   gameInterval = setInterval(drawGame, speed);
 }
 
 placeFood();
+drawGame();
 </script>
 </body>
 </html>

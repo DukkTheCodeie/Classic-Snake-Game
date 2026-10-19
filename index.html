@@ -773,13 +773,6 @@
       render();
     }
 
-    function createContinuousHeadPosition(x, y) {
-      return {
-        x: (x + 0.5) * gridSize,
-        y: (y + 0.5) * gridSize
-      };
-    }
-
     function gameOver() {
       gameRunning = false;
       if (animationFrameId) {
@@ -816,8 +809,20 @@
 
       const speed = difficultySettings[currentDifficulty] || difficultySettings.medium;
       const head = snake[0];
+      const prevCellX = Math.floor(head.x / gridSize);
+      const prevCellY = Math.floor(head.y / gridSize);
+
       head.x += dx * speed * delta;
       head.y += dy * speed * delta;
+
+      const currentCellX = Math.floor(head.x / gridSize);
+      const currentCellY = Math.floor(head.y / gridSize);
+
+      // Smoothly glide between grid centers while keeping grid-based movement logic.
+      if (currentCellX !== prevCellX || currentCellY !== prevCellY) {
+        head.x = (currentCellX + 0.5) * gridSize;
+        head.y = (currentCellY + 0.5) * gridSize;
+      }
 
       for (let i = snake.length - 1; i > 0; i--) {
         const current = snake[i];

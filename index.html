@@ -552,6 +552,9 @@
     let selectedColorKey = 'classic';
     let selectedSkinKey = 'classic';
     let selectedFoodKey = 'classic';
+    let animationFrameId = null;
+    let lastTimestamp = 0;
+    let accumulator = 0;
 
     function roundedRectPath(x, y, width, height, radius) {
       const r = Math.min(radius, width / 2, height / 2);

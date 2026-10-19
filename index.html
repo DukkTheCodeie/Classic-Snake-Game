@@ -1,1123 +1,948 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Snake</title>
-<style>
-:root {
-  --bg-1: #060b1a;
-  --bg-2: #0d1530;
-  --panel: rgba(17, 21, 36, 0.82);
-  --panel-strong: rgba(15, 18, 30, 0.96);
-  --panel-border: rgba(148, 163, 184, 0.18);
-  --text: #edf4ff;
-  --muted: #a8b6d6;
-  --green-1: #6ef7b2;
-  --green-2: #19d38d;
-  --cyan-1: #79e8ff;
-  --cyan-2: #4ca8ff;
-  --pink: #ff5bbd;
-  --purple: #a778ff;
-  --gold: #ffd166;
-  --danger: #ff5d73;
-  --shadow: rgba(11, 15, 26, 0.7);
-}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Classic Snake</title>
+  <style>
+    :root {
+      --bg-1: #060b1a;
+      --bg-2: #0d1530;
+      --panel: rgba(17, 21, 36, 0.82);
+      --panel-strong: rgba(15, 18, 30, 0.96);
+      --panel-border: rgba(148, 163, 184, 0.18);
+      --text: #edf4ff;
+      --muted: #a8b6d6;
+      --green-1: #6ef7b2;
+      --green-2: #19d38d;
+      --cyan-1: #79e8ff;
+      --cyan-2: #4ca8ff;
+      --pink: #ff5bbd;
+      --purple: #a778ff;
+      --gold: #ffd166;
+      --danger: #ff5d73;
+      --shadow: rgba(11, 15, 26, 0.7);
+    }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  user-select: none;
-}
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+    html, body { height: 100%; }
 
-html, body {
-  height: 100%;
-}
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(90, 104, 255, 0.28), transparent 30%),
+        radial-gradient(circle at 85% 15%, rgba(28, 221, 202, 0.18), transparent 28%),
+        linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 45%, #040912 100%);
+      color: var(--text);
+      overflow-x: hidden;
+    }
 
-body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background:
-    radial-gradient(circle at 15% 20%, rgba(90, 104, 255, 0.28), transparent 30%),
-    radial-gradient(circle at 85% 15%, rgba(28, 221, 202, 0.18), transparent 28%),
-    linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 45%, #040912 100%);
-  color: var(--text);
-  overflow-x: hidden;
-}
+    .app-shell {
+      width: min(92vw, 960px);
+      padding: 26px 18px 20px;
+      border-radius: 28px;
+      background: rgba(16, 22, 36, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255,255,255,0.08);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
 
-.app-shell {
-  width: min(92vw, 960px);
-  padding: 26px 18px 20px;
-  border-radius: 28px;
-  background: rgba(16, 22, 36, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255,255,255,0.08);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-}
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      padding: 0 6px;
+    }
 
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 18px;
-  padding: 0 6px;
-}
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-size: 0.76rem;
+      color: var(--text);
+      opacity: 0.9;
+    }
 
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  font-size: 0.76rem;
-  color: var(--text);
-  opacity: 0.9;
-}
+    .brand-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--green-1), var(--cyan-1));
+      box-shadow: 0 0 18px rgba(110, 247, 178, 0.8);
+    }
 
-.brand-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--green-1), var(--cyan-1));
-  box-shadow: 0 0 18px rgba(110, 247, 178, 0.8);
-}
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(121, 232, 255, 0.1);
+      border: 1px solid rgba(121, 232, 255, 0.2);
+      color: var(--cyan-1);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 700;
+      transition: all 0.2s ease;
+    }
 
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 14px;
-  border-radius: 999px;
-  background: rgba(121, 232, 255, 0.1);
-  border: 1px solid rgba(121, 232, 255, 0.2);
-  color: var(--cyan-1);
-  font-size: 0.7rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  font-weight: 700;
-  transition: all 0.2s ease;
-}
+    .status-pill.warn { background: rgba(255, 209, 102, 0.08); border-color: rgba(255, 209, 102, 0.26); color: var(--gold); }
+    .status-pill.danger { background: rgba(255, 93, 115, 0.09); border-color: rgba(255, 93, 115, 0.28); color: #ff9bab; }
 
-.status-pill.warn {
-  background: rgba(255, 209, 102, 0.08);
-  border-color: rgba(255, 209, 102, 0.26);
-  color: var(--gold);
-}
+    #game-container {
+      display: flex;
+      flex-direction: row;
+      gap: 24px;
+      align-items: stretch;
+      justify-content: center;
+      padding: 22px 16px 16px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(11, 15, 27, 0.9), rgba(18, 23, 37, 0.82));
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    }
 
-.status-pill.danger {
-  background: rgba(255, 93, 115, 0.09);
-  border-color: rgba(255, 93, 115, 0.28);
-  color: #ff9bab;
-}
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      width: min(260px, 28vw);
+      background: linear-gradient(180deg, rgba(22,29,43,0.7), rgba(10,14,22,0.78));
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 20px;
+      padding: 18px 16px 14px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    }
 
-#game-container {
-  display: flex;
-  flex-direction: row;
-  gap: 24px;
-  align-items: stretch;
-  justify-content: center;
-  padding: 22px 16px 16px;
-  border-radius: 24px;
-  background: linear-gradient(180deg, rgba(11, 15, 27, 0.9), rgba(18, 23, 37, 0.82));
-  border: 1px solid rgba(255,255,255,0.06);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
-}
+    .header h1 {
+      position: relative;
+      margin-bottom: 14px;
+      font-size: clamp(1.5rem, 2vw, 2.35rem);
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-align: center;
+      color: var(--text);
+      text-shadow: 0 0 26px rgba(117, 225, 255, 0.28);
+      background: linear-gradient(135deg, #dff8ff 0%, #7ae6ff 20%, #6ef7b2 55%, #a778ff 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
 
-.side-panel {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  width: min(260px, 28vw);
-  background: linear-gradient(180deg, rgba(22,29,43,0.7), rgba(10,14,22,0.78));
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 20px;
-  padding: 18px 16px 14px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
-}
+    .score-board {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      background: rgba(7, 11, 20, 0.45);
+      border: 1px solid rgba(255,255,255,0.04);
+      border-radius: 14px;
+      padding: 10px 8px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    }
 
-.header h1 {
-  position: relative;
-  margin-bottom: 14px;
-  font-size: clamp(1.5rem, 2vw, 2.35rem);
-  font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  text-align: center;
-  color: var(--text);
-  text-shadow: 0 0 26px rgba(117, 225, 255, 0.28);
-  background: linear-gradient(135deg, #dff8ff 0%, #7ae6ff 20%, #6ef7b2 55%, #a778ff 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
+    .score-box {
+      text-align: center;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.02);
+    }
 
-.score-board {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  background: rgba(7, 11, 20, 0.45);
-  border: 1px solid rgba(255,255,255,0.04);
-  border-radius: 14px;
-  padding: 10px 8px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
-}
+    .score-box span {
+      display: block;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
 
-.score-box {
-  text-align: center;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.02);
-}
+    .score-box strong {
+      display: block;
+      font-size: clamp(1.25rem, 2vw, 1.8rem);
+      font-weight: 800;
+      line-height: 1;
+      color: var(--green-1);
+      text-shadow: 0 0 18px rgba(110, 247, 178, 0.5);
+    }
 
-.score-box span {
-  display: block;
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 5px;
-}
+    #high-score { color: var(--cyan-1); text-shadow: 0 0 18px rgba(121, 232, 255, 0.45); }
 
-.score-box strong {
-  display: block;
-  font-size: clamp(1.25rem, 2vw, 1.8rem);
-  font-weight: 800;
-  line-height: 1;
-  color: var(--green-1);
-  text-shadow: 0 0 18px rgba(110, 247, 178, 0.5);
-}
+    .mode-panel { display: flex; flex-direction: column; gap: 12px; margin: 18px 0 12px; }
+    .mode-group { display: flex; flex-direction: column; gap: 7px; }
+    .mode-group label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
 
-#high-score {
-  color: var(--cyan-1);
-  text-shadow: 0 0 18px rgba(121, 232, 255, 0.45);
-}
+    .mode-group select {
+      width: 100%;
+      background: rgba(9, 15, 26, 0.68);
+      border: 1px solid rgba(117, 225, 255, 0.32);
+      border-radius: 12px;
+      padding: 11px 12px;
+      color: var(--text);
+      font-size: 0.96rem;
+      font-weight: 600;
+      appearance: none;
+      background-image: linear-gradient(45deg, transparent 50%, var(--cyan-1) 50%), linear-gradient(135deg, var(--cyan-1) 50%, transparent 50%);
+      background-position: calc(100% - 18px) calc(1.1em + 2px), calc(100% - 13px) calc(1.1em + 2px);
+      background-size: 5px 5px, 5px 5px;
+      background-repeat: no-repeat;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
 
-.mode-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin: 18px 0 12px;
-}
+    .mode-group select:focus { border-color: rgba(110, 247, 178, 0.7); box-shadow: 0 0 0 3px rgba(110, 247, 178, 0.18); }
 
-.mode-group {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
+    .controls { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 10px; }
+    .control-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; gap: 8px; }
 
-.mode-group label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
+    .btn {
+      position: relative;
+      border: 1px solid rgba(121, 232, 255, 0.22);
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(17, 31, 47, 0.92), rgba(12, 17, 26, 0.96));
+      color: var(--text);
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      padding: 12px 14px;
+      transition: transform 0.12s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      box-shadow: 0 8px 18px rgba(6, 8, 16, 0.28);
+    }
 
-.mode-group select {
-  width: 100%;
-  background: rgba(9, 15, 26, 0.68);
-  border: 1px solid rgba(117, 225, 255, 0.32);
-  border-radius: 12px;
-  padding: 11px 12px;
-  color: var(--text);
-  font-size: 0.96rem;
-  font-weight: 600;
-  appearance: none;
-  background-image: linear-gradient(45deg, transparent 50%, var(--cyan-1) 50%), linear-gradient(135deg, var(--cyan-1) 50%, transparent 50%);
-  background-position: calc(100% - 18px) calc(1.1em + 2px), calc(100% - 13px) calc(1.1em + 2px);
-  background-size: 5px 5px, 5px 5px;
-  background-repeat: no-repeat;
-  outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
+    .btn:hover { border-color: rgba(110, 247, 178, 0.5); box-shadow: 0 0 0 3px rgba(110,247,178,0.08), 0 10px 22px rgba(15, 25, 38, 0.38); }
+    .btn:active { transform: translateY(1px) scale(0.99); }
+    #btn-start { width: 100%; background: linear-gradient(135deg, rgba(110, 247, 178, 0.16), rgba(121, 232, 255, 0.14)); border-color: rgba(110, 247, 178, 0.5); }
+    #btn-customize { width: 100%; background: linear-gradient(135deg, rgba(167, 120, 255, 0.16), rgba(255, 91, 189, 0.14)); border-color: rgba(167, 120, 255, 0.45); }
+    #btn-left, #btn-right, #btn-up, #btn-down { min-height: 46px; }
 
-.mode-group select:focus {
-  border-color: rgba(110, 247, 178, 0.7);
-  box-shadow: 0 0 0 3px rgba(110, 247, 178, 0.18);
-}
+    .board-frame {
+      position: relative;
+      background: linear-gradient(180deg, rgba(19, 24, 35, 0.86), rgba(7, 10, 18, 0.9));
+      border-radius: 22px;
+      padding: 14px;
+      border: 1px solid rgba(121, 232, 255, 0.18);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.04), 0 14px 30px rgba(0,0,0,0.32), 0 0 24px rgba(94, 234, 212, 0.18);
+    }
 
-.controls {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  margin-top: 10px;
-}
+    canvas {
+      display: block;
+      background: linear-gradient(180deg, #040915 0%, #0b1020 100%);
+      border: 2px solid rgba(121, 232, 255, 0.45);
+      border-radius: 14px;
+      box-shadow: inset 0 0 34px rgba(52, 105, 160, 0.18), 0 0 18px rgba(76, 168, 255, 0.12);
+      width: min(72vw, 460px);
+      height: auto;
+    }
 
-.control-row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  width: 100%;
-  gap: 8px;
-}
+    .board-overlay {
+      position: absolute;
+      inset: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border-radius: 14px;
+      background: rgba(5, 9, 17, 0.38);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: #ebf6ff;
+      font-size: clamp(1.1rem, 2vw, 1.8rem);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 800;
+      text-shadow: 0 0 20px rgba(121, 232, 255, 0.4);
+      pointer-events: none;
+      transition: opacity 0.18s ease;
+      opacity: 1;
+    }
 
-.btn {
-  position: relative;
-  border: 1px solid rgba(121, 232, 255, 0.22);
-  border-radius: 12px;
-  background: linear-gradient(180deg, rgba(17, 31, 47, 0.92), rgba(12, 17, 26, 0.96));
-  color: var(--text);
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  cursor: pointer;
-  padding: 12px 14px;
-  transition: transform 0.12s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  box-shadow: 0 8px 18px rgba(6, 8, 16, 0.28);
-}
+    .board-overlay.hidden { opacity: 0; }
 
-.btn:hover {
-  border-color: rgba(110, 247, 178, 0.5);
-  box-shadow: 0 0 0 3px rgba(110,247,178,0.08), 0 10px 22px rgba(15, 25, 38, 0.38);
-}
+    .customize-modal {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(3, 7, 16, 0.72);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
 
-.btn:active {
-  transform: translateY(1px) scale(0.99);
-}
+    .customize-modal.visible { opacity: 1; pointer-events: auto; }
 
-#btn-start {
-  width: 100%;
-  background: linear-gradient(135deg, rgba(110, 247, 178, 0.16), rgba(121, 232, 255, 0.14));
-  border-color: rgba(110, 247, 178, 0.5);
-}
+    .customize-panel {
+      width: min(92vw, 520px);
+      background: linear-gradient(180deg, rgba(20, 27, 41, 0.96), rgba(12, 16, 26, 0.96));
+      border: 1px solid rgba(157, 169, 194, 0.18);
+      border-radius: 22px;
+      padding: 20px 18px 16px;
+      box-shadow: 0 22px 60px rgba(0, 0, 0, 0.4);
+    }
 
-#btn-customize {
-  width: 100%;
-  background: linear-gradient(135deg, rgba(167, 120, 255, 0.16), rgba(255, 91, 189, 0.14));
-  border-color: rgba(167, 120, 255, 0.45);
-}
+    .customize-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
 
-#btn-left, #btn-right, #btn-up, #btn-down {
-  min-height: 46px;
-}
+    .customize-header h2 {
+      font-size: 1.15rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
 
-.board-frame {
-  position: relative;
-  background: linear-gradient(180deg, rgba(19, 24, 35, 0.86), rgba(7, 10, 18, 0.9));
-  border-radius: 22px;
-  padding: 14px;
-  border: 1px solid rgba(121, 232, 255, 0.18);
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.04), 0 14px 30px rgba(0,0,0,0.32), 0 0 24px rgba(94, 234, 212, 0.18);
-}
+    .close-btn {
+      width: 36px;
+      height: 36px;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 50%;
+      background: rgba(255,255,255,0.02);
+      color: var(--text);
+      font-size: 1.4rem;
+      cursor: pointer;
+    }
 
-canvas {
-  display: block;
-  background: linear-gradient(180deg, #040915 0%, #0b1020 100%);
-  border: 2px solid rgba(121, 232, 255, 0.45);
-  border-radius: 14px;
-  box-shadow: inset 0 0 34px rgba(52, 105, 160, 0.18), 0 0 18px rgba(76, 168, 255, 0.12);
-  width: min(72vw, 460px);
-  height: auto;
-}
+    .customize-grid { display: grid; gap: 16px; }
+    .custom-row { display: flex; flex-direction: column; gap: 7px; }
+    .custom-row label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
 
-.board-overlay {
-  position: absolute;
-  inset: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  border-radius: 14px;
-  background: rgba(5, 9, 17, 0.38);
-  border: 1px solid rgba(255,255,255,0.06);
-  color: #ebf6ff;
-  font-size: clamp(1.1rem, 2vw, 1.8rem);
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  font-weight: 800;
-  text-shadow: 0 0 20px rgba(121, 232, 255, 0.4);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
-  opacity: 1;
-  pointer-events: none;
-  transition: opacity 0.18s ease;
-}
+    .custom-row select {
+      width: 100%;
+      background: rgba(9, 15, 26, 0.7);
+      border: 1px solid rgba(117, 225, 255, 0.32);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 0.95rem;
+      font-weight: 600;
+      outline: none;
+    }
 
-.board-overlay.hidden {
-  opacity: 0;
-}
+    .customize-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
 
-.customize-modal {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(3, 7, 16, 0.72);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  z-index: 50;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-}
-
-.customize-modal.visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.customize-panel {
-  width: min(92vw, 520px);
-  background: linear-gradient(180deg, rgba(20, 27, 41, 0.96), rgba(12, 16, 26, 0.96));
-  border: 1px solid rgba(157, 169, 194, 0.18);
-  border-radius: 22px;
-  padding: 20px 18px 16px;
-  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.4);
-}
-
-.customize-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 18px;
-}
-
-.customize-header h2 {
-  font-size: 1.15rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.close-btn {
-  width: 36px;
-  height: 36px;
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 50%;
-  background: rgba(255,255,255,0.02);
-  color: var(--text);
-  font-size: 1.4rem;
-  cursor: pointer;
-}
-
-.customize-grid {
-  display: grid;
-  gap: 16px;
-}
-
-.custom-row {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.custom-row label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.custom-row select {
-  width: 100%;
-  background: rgba(9, 15, 26, 0.7);
-  border: 1px solid rgba(117, 225, 255, 0.32);
-  border-radius: 12px;
-  padding: 12px 14px;
-  color: var(--text);
-  font-size: 0.95rem;
-  font-weight: 600;
-  outline: none;
-}
-
-.custom-row span.unlock-text {
-  font-size: 0.7rem;
-  color: var(--gold);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.customize-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-@media (max-width: 800px) {
-  #game-container {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .side-panel {
-    width: min(100%, 420px);
-  }
-
-  .board-frame {
-    width: 100%;
-  }
-
-  canvas {
-    width: min(82vw, 460px);
-  }
-}
-</style>
+    @media (max-width: 800px) {
+      #game-container { flex-direction: column; align-items: center; }
+      .side-panel { width: min(100%, 420px); }
+      .board-frame { width: 100%; }
+      canvas { width: min(82vw, 460px); }
+    }
+  </style>
 </head>
 <body>
-<div class="app-shell">
-  <div class="topbar">
-    <div class="brand"><span class="brand-dot"></span> Snake</div>
-    <div class="status-pill" id="status-pill">Ready</div>
-  </div>
+  <div class="app-shell">
+    <div class="topbar">
+      <div class="brand"><span class="brand-dot"></span> Snake</div>
+      <div class="status-pill" id="status-pill">Ready</div>
+    </div>
 
-  <div id="game-container">
-    <div class="side-panel">
-      <div class="header">
-        <h1>Snake</h1>
-        <div class="score-board">
-          <div class="score-box">
-            <span>Score</span>
-            <strong id="score">0</strong>
+    <div id="game-container">
+      <div class="side-panel">
+        <div class="header">
+          <h1>Snake</h1>
+          <div class="score-board">
+            <div class="score-box">
+              <span>Score</span>
+              <strong id="score">0</strong>
+            </div>
+            <div class="score-box">
+              <span>High</span>
+              <strong id="high-score">0</strong>
+            </div>
           </div>
-          <div class="score-box">
-            <span>High</span>
-            <strong id="high-score">0</strong>
+        </div>
+
+        <div class="mode-panel">
+          <div class="mode-group">
+            <label for="difficulty-select">Difficulty</label>
+            <select id="difficulty-select">
+              <option value="easy">Easy</option>
+              <option value="medium" selected>Medium</option>
+              <option value="hard">Hard</option>
+              <option value="insane">Insane</option>
+            </select>
+          </div>
+
+          <div class="mode-group">
+            <label for="map-select">Map</label>
+            <select id="map-select">
+              <option value="classic" selected>Classic</option>
+              <option value="maze">Maze</option>
+              <option value="cross">Cross</option>
+              <option value="spiral">Spiral</option>
+            </select>
           </div>
         </div>
-      </div>
 
-      <div class="mode-panel">
-        <div class="mode-group">
-          <label for="difficulty-select">Difficulty</label>
-          <select id="difficulty-select">
-            <option value="easy">Easy</option>
-            <option value="medium" selected>Medium</option>
-            <option value="hard">Hard</option>
-            <option value="insane">Insane</option>
-          </select>
-        </div>
-
-        <div class="mode-group">
-          <label for="map-select">Map</label>
-          <select id="map-select">
-            <option value="classic" selected>Classic</option>
-            <option value="maze">Maze</option>
-            <option value="cross">Cross</option>
-            <option value="spiral">Spiral</option>
-          </select>
+        <div class="controls">
+          <button class="btn" id="btn-up">UP</button>
+          <div class="control-row">
+            <button class="btn" id="btn-left">LEFT</button>
+            <button class="btn" id="btn-down">DOWN</button>
+            <button class="btn" id="btn-right">RIGHT</button>
+          </div>
+          <button class="btn" id="btn-start" style="margin-top: 8px;">START / RESTART</button>
+          <button class="btn" id="btn-customize">Customize</button>
         </div>
       </div>
 
-      <div class="controls">
-        <button class="btn" id="btn-up">UP</button>
-        <div class="control-row">
-          <button class="btn" id="btn-left">LEFT</button>
-          <button class="btn" id="btn-down">DOWN</button>
-          <button class="btn" id="btn-right">RIGHT</button>
-        </div>
-        <button class="btn" id="btn-start" style="margin-top: 8px;">START / RESTART</button>
-        <button class="btn" id="btn-customize">Customize</button>
+      <div class="board-frame">
+        <canvas id="gameCanvas" width="400" height="400"></canvas>
+        <div class="board-overlay hidden" id="board-overlay">Game Over</div>
       </div>
-    </div>
-
-    <div class="board-frame">
-      <canvas id="gameCanvas" width="400" height="400"></canvas>
-      <div class="board-overlay hidden" id="board-overlay">Game Over</div>
     </div>
   </div>
-</div>
 
-<div class="customize-modal" id="customize-modal" aria-hidden="true">
-  <div class="customize-panel" role="dialog" aria-modal="true" aria-labelledby="customize-title">
-    <div class="customize-header">
-      <h2 id="customize-title">Customize</h2>
-      <button class="close-btn" id="close-customize" aria-label="Close customize menu">×</button>
-    </div>
-
-    <div class="customize-grid">
-      <div class="custom-row">
-        <label for="snake-color-select">Snake Color</label>
-        <select id="snake-color-select"></select>
+  <div class="customize-modal" id="customize-modal" aria-hidden="true">
+    <div class="customize-panel" role="dialog" aria-modal="true" aria-labelledby="customize-title">
+      <div class="customize-header">
+        <h2 id="customize-title">Customize</h2>
+        <button class="close-btn" id="close-customize" aria-label="Close customize menu">×</button>
       </div>
 
-      <div class="custom-row">
-        <label for="snake-skin-select">Snake Skin</label>
-        <select id="snake-skin-select"></select>
+      <div class="customize-grid">
+        <div class="custom-row">
+          <label for="snake-color-select">Snake Color</label>
+          <select id="snake-color-select"></select>
+        </div>
+        <div class="custom-row">
+          <label for="snake-skin-select">Snake Skin</label>
+          <select id="snake-skin-select"></select>
+        </div>
+        <div class="custom-row">
+          <label for="food-style-select">Food Style</label>
+          <select id="food-style-select"></select>
+        </div>
       </div>
 
-      <div class="custom-row">
-        <label for="food-style-select">Food Style</label>
-        <select id="food-style-select"></select>
+      <div class="customize-actions">
+        <button class="btn" id="save-customize">Save</button>
       </div>
-    </div>
-
-    <div class="customize-actions">
-      <button class="btn" id="save-customize">Save</button>
     </div>
   </div>
-</div>
 
-<script>
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const scoreEl = document.getElementById('score');
-const highScoreEl = document.getElementById('high-score');
-const difficultySelect = document.getElementById('difficulty-select');
-const mapSelect = document.getElementById('map-select');
-const statusPill = document.getElementById('status-pill');
-const boardOverlay = document.getElementById('board-overlay');
-const customizeModal = document.getElementById('customize-modal');
-const closeCustomize = document.getElementById('close-customize');
-const saveCustomize = document.getElementById('save-customize');
-const btnCustomize = document.getElementById('btn-customize');
-const snakeColorSelect = document.getElementById('snake-color-select');
-const snakeSkinSelect = document.getElementById('snake-skin-select');
-const foodStyleSelect = document.getElementById('food-style-select');
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const highScoreEl = document.getElementById('high-score');
+    const difficultySelect = document.getElementById('difficulty-select');
+    const mapSelect = document.getElementById('map-select');
+    const statusPill = document.getElementById('status-pill');
+    const boardOverlay = document.getElementById('board-overlay');
+    const customizeModal = document.getElementById('customize-modal');
+    const closeCustomize = document.getElementById('close-customize');
+    const saveCustomize = document.getElementById('save-customize');
+    const btnCustomize = document.getElementById('btn-customize');
+    const snakeColorSelect = document.getElementById('snake-color-select');
+    const snakeSkinSelect = document.getElementById('snake-skin-select');
+    const foodStyleSelect = document.getElementById('food-style-select');
 
-const STORAGE_KEY = 'classic-snake-progress-v1';
-const gridSize = 20;
-const tileCount = canvas.width / gridSize;
+    const STORAGE_KEY = 'classic-snake-progress-v1';
+    const gridSize = 20;
+    const tileCount = canvas.width / gridSize;
 
-const difficultySettings = {
-  easy: 130,
-  medium: 100,
-  hard: 75,
-  insane: 55
-};
+    const difficultySettings = { easy: 130, medium: 100, hard: 75, insane: 55 };
 
-const colorThemes = {
-  classic: { label: 'Classic Green', minScore: 0, head: ['#b7ff7a', '#55ff88', '#1bcf73'], body: ['#67ffd5', '#21e6b2', '#00b7d8'] },
-  electric: { label: 'Electric Blue', minScore: 50, head: ['#8fe7ff', '#4ad5ff', '#1d8cff'], body: ['#5ee3ff', '#34d3a1', '#2bb3ff'] },
-  ruby: { label: 'Ruby Red', minScore: 120, head: ['#ffb4b4', '#ff6b6b', '#ff3d5a'], body: ['#ff7b7b', '#ff4d84', '#ff2d6d'] },
-  violet: { label: 'Violet Pulse', minScore: 220, head: ['#f2d1ff', '#ce8bff', '#9d4dff'], body: ['#d7b5ff', '#af6aff', '#7a52ff'] },
-  gold: { label: 'Golden Rush', minScore: 360, head: ['#ffe8a3', '#ffcc66', '#ff9f1c'], body: ['#ffd36c', '#ffb347', '#ff7a18'] }
-};
+    const colorThemes = {
+      classic: { label: 'Classic Green', minScore: 0, head: ['#b7ff7a', '#55ff88', '#1bcf73'], body: ['#67ffd5', '#21e6b2', '#00b7d8'] },
+      electric: { label: 'Electric Blue', minScore: 50, head: ['#8fe7ff', '#4ad5ff', '#1d8cff'], body: ['#5ee3ff', '#34d3a1', '#2bb3ff'] },
+      ruby: { label: 'Ruby Red', minScore: 120, head: ['#ffb4b4', '#ff6b6b', '#ff3d5a'], body: ['#ff7b7b', '#ff4d84', '#ff2d6d'] },
+      violet: { label: 'Violet Pulse', minScore: 220, head: ['#f2d1ff', '#ce8bff', '#9d4dff'], body: ['#d7b5ff', '#af6aff', '#7a52ff'] },
+      gold: { label: 'Golden Rush', minScore: 360, head: ['#ffe8a3', '#ffcc66', '#ff9f1c'], body: ['#ffd36c', '#ffb347', '#ff7a18'] }
+    };
 
-const skinThemes = {
-  classic: { label: 'Classic', minScore: 0, accent: 'rgba(255,255,255,0.18)' },
-  pulse: { label: 'Pulse', minScore: 60, accent: 'rgba(117, 225, 255, 0.45)' },
-  shadow: { label: 'Shadow', minScore: 140, accent: 'rgba(167,120,255,0.38)' },
-  arcade: { label: 'Arcade', minScore: 260, accent: 'rgba(255, 255, 255, 0.3)' },
-  galaxy: { label: 'Galaxy', minScore: 420, accent: 'rgba(255, 191, 94, 0.34)' }
-};
+    const skinThemes = {
+      classic: { label: 'Classic', minScore: 0, accent: 'rgba(255,255,255,0.18)' },
+      pulse: { label: 'Pulse', minScore: 60, accent: 'rgba(117, 225, 255, 0.45)' },
+      shadow: { label: 'Shadow', minScore: 140, accent: 'rgba(167,120,255,0.38)' },
+      arcade: { label: 'Arcade', minScore: 260, accent: 'rgba(255, 255, 255, 0.3)' },
+      galaxy: { label: 'Galaxy', minScore: 420, accent: 'rgba(255, 191, 94, 0.34)' }
+    };
 
-const foodThemes = {
-  classic: { label: 'Classic Fruit', minScore: 0, glow: '#ff4d8d', colors: ['#fff7ff', '#ffd9f2', '#ff4d8d', '#ff1f6d', '#7a0737'] },
-  mint: { label: 'Mint Burst', minScore: 80, glow: '#60f5c1', colors: ['#e9fff8', '#bdffe6', '#60f5c1', '#18c98a', '#0a6f50'] },
-  plasma: { label: 'Plasma Orb', minScore: 170, glow: '#9d7bff', colors: ['#f4ebff', '#dfd2ff', '#9d7bff', '#7a52ff', '#2a0d56'] },
-  sunrise: { label: 'Sunrise', minScore: 300, glow: '#ffaf3b', colors: ['#fff6d5', '#ffea9f', '#ffaf3b', '#ff7b00', '#7a3200'] },
-  crystal: { label: 'Crystal Core', minScore: 500, glow: '#7af7ff', colors: ['#effeff', '#d7fdff', '#7af7ff', '#3bc6ff', '#0d3d6d'] }
-};
+    const foodThemes = {
+      classic: { label: 'Classic Fruit', minScore: 0, glow: '#ff4d8d', colors: ['#fff7ff', '#ffd9f2', '#ff4d8d', '#ff1f6d', '#7a0737'] },
+      mint: { label: 'Mint Burst', minScore: 80, glow: '#60f5c1', colors: ['#e9fff8', '#bdffe6', '#60f5c1', '#18c98a', '#0a6f50'] },
+      plasma: { label: 'Plasma Orb', minScore: 170, glow: '#9d7bff', colors: ['#f4ebff', '#dfd2ff', '#9d7bff', '#7a52ff', '#2a0d56'] },
+      sunrise: { label: 'Sunrise', minScore: 300, glow: '#ffaf3b', colors: ['#fff6d5', '#ffea9f', '#ffaf3b', '#ff7b00', '#7a3200'] },
+      crystal: { label: 'Crystal Core', minScore: 500, glow: '#7af7ff', colors: ['#effeff', '#d7fdff', '#7af7ff', '#3bc6ff', '#0d3d6d'] }
+    };
 
-const maps = {
-  classic: {
-    name: 'Classic',
-    walls: [],
-    spawn: [{ x: 10, y: 10 }],
-    direction: { x: 1, y: 0 }
-  },
-  maze: {
-    name: 'Maze',
-    walls: [
-      ...Array.from({ length: 16 }, (_, i) => [4, i + 2]),
-      ...Array.from({ length: 16 }, (_, i) => [14, i + 2]),
-      ...Array.from({ length: 16 }, (_, i) => [i + 2, 8]),
-      ...Array.from({ length: 16 }, (_, i) => [i + 2, 12])
-    ].filter(([x, y]) => !(x === 10 && y === 10)),
-    spawn: [{ x: 9, y: 10 }, { x: 10, y: 10 }, { x: 11, y: 10 }],
-    direction: { x: 1, y: 0 }
-  },
-  cross: {
-    name: 'Cross',
-    walls: [
-      ...Array.from({ length: 10 }, (_, i) => [i + 5, 9]),
-      ...Array.from({ length: 10 }, (_, i) => [9, i + 5]),
-      ...Array.from({ length: 7 }, (_, i) => [i + 6, 15]),
-      ...Array.from({ length: 7 }, (_, i) => [i + 6, 4]),
-      ...Array.from({ length: 7 }, (_, i) => [15, i + 6]),
-      ...Array.from({ length: 7 }, (_, i) => [4, i + 6])
-    ],
-    spawn: [{ x: 2, y: 10 }, { x: 3, y: 10 }, { x: 4, y: 10 }],
-    direction: { x: 1, y: 0 }
-  },
-  spiral: {
-    name: 'Spiral',
-    walls: [
-      ...Array.from({ length: 17 }, (_, i) => [i + 2, 2]),
-      ...Array.from({ length: 16 }, (_, i) => [17, i + 2]),
-      ...Array.from({ length: 15 }, (_, i) => [17 - i, 17]),
-      ...Array.from({ length: 15 }, (_, i) => [2, 17 - i]),
-      ...Array.from({ length: 11 }, (_, i) => [i + 4, 6]),
-      ...Array.from({ length: 11 }, (_, i) => [15, i + 6]),
-      ...Array.from({ length: 11 }, (_, i) => [15 - i, 13]),
-      ...Array.from({ length: 11 }, (_, i) => [4, 13 - i])
-    ],
-    spawn: [{ x: 3, y: 10 }, { x: 4, y: 10 }, { x: 5, y: 10 }],
-    direction: { x: 1, y: 0 }
-  }
-};
+    const maps = {
+      classic: { name: 'Classic', walls: [], spawn: [{ x: 10, y: 10 }], direction: { x: 1, y: 0 } },
+      maze: {
+        name: 'Maze',
+        walls: [
+          ...Array.from({ length: 16 }, (_, i) => [4, i + 2]),
+          ...Array.from({ length: 16 }, (_, i) => [14, i + 2]),
+          ...Array.from({ length: 16 }, (_, i) => [i + 2, 8]),
+          ...Array.from({ length: 16 }, (_, i) => [i + 2, 12])
+        ].filter(([x, y]) => !(x === 10 && y === 10)),
+        spawn: [{ x: 9, y: 10 }, { x: 10, y: 10 }, { x: 11, y: 10 }],
+        direction: { x: 1, y: 0 }
+      },
+      cross: {
+        name: 'Cross',
+        walls: [
+          ...Array.from({ length: 10 }, (_, i) => [i + 5, 9]),
+          ...Array.from({ length: 10 }, (_, i) => [9, i + 5]),
+          ...Array.from({ length: 7 }, (_, i) => [i + 6, 15]),
+          ...Array.from({ length: 7 }, (_, i) => [i + 6, 4]),
+          ...Array.from({ length: 7 }, (_, i) => [15, i + 6]),
+          ...Array.from({ length: 7 }, (_, i) => [4, i + 6])
+        ],
+        spawn: [{ x: 2, y: 10 }, { x: 3, y: 10 }, { x: 4, y: 10 }],
+        direction: { x: 1, y: 0 }
+      },
+      spiral: {
+        name: 'Spiral',
+        walls: [
+          ...Array.from({ length: 17 }, (_, i) => [i + 2, 2]),
+          ...Array.from({ length: 16 }, (_, i) => [17, i + 2]),
+          ...Array.from({ length: 15 }, (_, i) => [17 - i, 17]),
+          ...Array.from({ length: 15 }, (_, i) => [2, 17 - i]),
+          ...Array.from({ length: 11 }, (_, i) => [i + 4, 6]),
+          ...Array.from({ length: 11 }, (_, i) => [15, i + 6]),
+          ...Array.from({ length: 11 }, (_, i) => [15 - i, 13]),
+          ...Array.from({ length: 11 }, (_, i) => [4, 13 - i])
+        ],
+        spawn: [{ x: 3, y: 10 }, { x: 4, y: 10 }, { x: 5, y: 10 }],
+        direction: { x: 1, y: 0 }
+      }
+    };
 
-let snake = [{ x: 10, y: 10 }];
-let food = { x: 15, y: 15 };
-let dx = 1;
-let dy = 0;
-let nextDx = 1;
-let nextDy = 0;
-let score = 0;
-let highScore = 0;
-let gameInterval = null;
-let speed = difficultySettings.medium;
-let currentMap = mapSelect.value;
-let currentDifficulty = difficultySelect.value;
+    let snake = [{ x: 10, y: 10 }];
+    let food = { x: 15, y: 15 };
+    let dx = 1;
+    let dy = 0;
+    let nextDx = 1;
+    let nextDy = 0;
+    let score = 0;
+    let highScore = 0;
+    let gameInterval = null;
+    let currentMap = mapSelect.value;
+    let currentDifficulty = difficultySelect.value;
+    let selectedColorKey = 'classic';
+    let selectedSkinKey = 'classic';
+    let selectedFoodKey = 'classic';
 
-let selectedColorKey = 'classic';
-let selectedSkinKey = 'classic';
-let selectedFoodKey = 'classic';
+    function loadProgress() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (typeof parsed.highScore === 'number') highScore = parsed.highScore;
+        if (parsed.snakeColor) selectedColorKey = parsed.snakeColor;
+        if (parsed.snakeSkin) selectedSkinKey = parsed.snakeSkin;
+        if (parsed.foodStyle) selectedFoodKey = parsed.foodStyle;
+      } catch (error) {
+        console.warn('Unable to load snake progress', error);
+      }
+    }
 
-function loadProgress() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    const parsed = JSON.parse(raw);
-    if (typeof parsed.highScore === 'number') highScore = parsed.highScore;
-    if (parsed.snakeColor) selectedColorKey = parsed.snakeColor;
-    if (parsed.snakeSkin) selectedSkinKey = parsed.snakeSkin;
-    if (parsed.foodStyle) selectedFoodKey = parsed.foodStyle;
-  } catch (error) {
-    console.warn('Unable to load snake progress', error);
-  }
-}
+    function saveProgress() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        highScore,
+        snakeColor: selectedColorKey,
+        snakeSkin: selectedSkinKey,
+        foodStyle: selectedFoodKey
+      }));
+    }
 
-function saveProgress() {
-  const payload = {
-    highScore,
-    snakeColor: selectedColorKey,
-    snakeSkin: selectedSkinKey,
-    foodStyle: selectedFoodKey
-  };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-}
+    function getUnlockedOptions() {
+      return {
+        color: Object.entries(colorThemes).filter(([key, theme]) => highScore >= theme.minScore).map(([key]) => key),
+        skin: Object.entries(skinThemes).filter(([key, theme]) => highScore >= theme.minScore).map(([key]) => key),
+        food: Object.entries(foodThemes).filter(([key, theme]) => highScore >= theme.minScore).map(([key]) => key)
+      };
+    }
 
-function getUnlockedOptions() {
-  return {
-    color: Object.entries(colorThemes).filter(([key, theme]) => highScore >= theme.minScore).map(([key]) => key),
-    skin: Object.entries(skinThemes).filter(([key, theme]) => highScore >= theme.minScore).map(([key]) => key),
-    food: Object.entries(foodThemes).filter(([key, theme]) => highScore >= theme.minScore).map(([key]) => key)
-  };
-}
+    function updateHighScoreDisplay() {
+      highScoreEl.textContent = highScore;
+      saveProgress();
+    }
 
-function getAvailableThemeList() {
-  const unlocked = getUnlockedOptions();
-  const choose = (list, current, fallback) => {
-    if (list.includes(current)) return current;
-    return fallback;
-  };
+    function setStatus(label, kind = '') {
+      statusPill.textContent = label;
+      statusPill.classList.remove('warn', 'danger');
+      if (kind === 'warn') statusPill.classList.add('warn');
+      if (kind === 'danger') statusPill.classList.add('danger');
+    }
 
-  selectedColorKey = choose(unlocked.color, selectedColorKey, 'classic');
-  selectedSkinKey = choose(unlocked.skin, selectedSkinKey, 'classic');
-  selectedFoodKey = choose(unlocked.food, selectedFoodKey, 'classic');
-}
+    function populateCustomizationOptions() {
+      const unlocked = getUnlockedOptions();
+      function buildOptions(select, optionsMap, currentValue) {
+        select.innerHTML = '';
+        Object.entries(optionsMap).forEach(([key, option]) => {
+          const keyName = select.id.includes('color') ? 'color' : select.id.includes('skin') ? 'skin' : 'food';
+          const unlockedForThis = unlocked[keyName].includes(key);
+          const optionEl = document.createElement('option');
+          optionEl.value = key;
+          optionEl.textContent = `${option.label}${unlockedForThis ? '' : ' (Locked: ' + option.minScore + ')'}`;
+          optionEl.disabled = !unlockedForThis;
+          if (key === currentValue) optionEl.selected = true;
+          select.appendChild(optionEl);
+        });
+      }
+      buildOptions(snakeColorSelect, colorThemes, selectedColorKey);
+      buildOptions(snakeSkinSelect, skinThemes, selectedSkinKey);
+      buildOptions(foodStyleSelect, foodThemes, selectedFoodKey);
+    }
 
-function updateHighScoreDisplay() {
-  highScoreEl.textContent = highScore;
-  saveProgress();
-}
+    function openCustomizeMenu() {
+      populateCustomizationOptions();
+      customizeModal.classList.add('visible');
+      customizeModal.setAttribute('aria-hidden', 'false');
+    }
 
-function setStatus(label, kind = '') {
-  statusPill.textContent = label;
-  statusPill.classList.remove('warn', 'danger');
-  if (kind === 'warn') statusPill.classList.add('warn');
-  if (kind === 'danger') statusPill.classList.add('danger');
-}
+    function closeCustomizeMenu() {
+      customizeModal.classList.remove('visible');
+      customizeModal.setAttribute('aria-hidden', 'true');
+    }
 
-function populateCustomizationOptions() {
-  const unlocked = getUnlockedOptions();
+    function applyChosenCustomization() {
+      selectedColorKey = snakeColorSelect.value;
+      selectedSkinKey = snakeSkinSelect.value;
+      selectedFoodKey = foodStyleSelect.value;
+      saveProgress();
+      closeCustomizeMenu();
+      render();
+    }
 
-  function buildOptions(select, optionsMap, currentValue) {
-    select.innerHTML = '';
-    Object.entries(optionsMap).forEach(([key, option]) => {
-      const unlockedForThis = unlocked[select.id.includes('color') ? 'color' : select.id.includes('skin') ? 'skin' : 'food'].includes(key);
-      const optionEl = document.createElement('option');
-      optionEl.value = key;
-      optionEl.textContent = `${option.label}${unlockedForThis ? '' : ' (Locked: ' + option.minScore + ')'}`;
-      optionEl.disabled = !unlockedForThis;
-      if (key === currentValue) optionEl.selected = true;
-      select.appendChild(optionEl);
+    function getCurrentTheme() {
+      return {
+        color: colorThemes[selectedColorKey] || colorThemes.classic,
+        skin: skinThemes[selectedSkinKey] || skinThemes.classic,
+        food: foodThemes[selectedFoodKey] || foodThemes.classic
+      };
+    }
+
+    function wallExists(x, y) {
+      return maps[currentMap].walls.some(([wallX, wallY]) => wallX === x && wallY === y);
+    }
+
+    function snakeHitsCell(x, y) {
+      return snake.some(part => part.x === x && part.y === y);
+    }
+
+    function randomFoodCell() {
+      let tries = 0;
+      while (tries < 500) {
+        const x = Math.floor(Math.random() * tileCount);
+        const y = Math.floor(Math.random() * tileCount);
+        if (!wallExists(x, y) && !snakeHitsCell(x, y)) {
+          return { x, y };
+        }
+        tries++;
+      }
+      return { x: 10, y: 10 };
+    }
+
+    function syncMapAndDirection() {
+      const selectedMap = maps[currentMap];
+      snake = selectedMap.spawn.map(segment => ({ ...segment }));
+      dx = selectedMap.direction.x;
+      dy = selectedMap.direction.y;
+      nextDx = dx;
+      nextDy = dy;
+      food = randomFoodCell();
+    }
+
+    function drawWalls() {
+      const wallColor = '#0e3b7a';
+      const wallGlow = '#6ce3ff';
+      maps[currentMap].walls.forEach(([wallX, wallY]) => {
+        const px = wallX * gridSize + 1;
+        const py = wallY * gridSize + 1;
+        const size = gridSize - 2;
+
+        ctx.fillStyle = wallColor;
+        ctx.fillRect(px, py, size, size);
+
+        ctx.strokeStyle = wallGlow;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(px + 1, py + 1, size - 2, size - 2);
+      });
+    }
+
+    function drawFood() {
+      const theme = getCurrentTheme().food;
+      const x = food.x * gridSize + gridSize / 2;
+      const y = food.y * gridSize + gridSize / 2;
+      const radius = gridSize / 2 - 2;
+      const pulse = 1 + Math.sin(Date.now() * 0.01) * 0.18;
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.shadowBlur = 25;
+      ctx.shadowColor = theme.glow;
+
+      const glow = ctx.createRadialGradient(0, 0, 2, 0, 0, radius * 2.4);
+      glow.addColorStop(0, theme.colors[0]);
+      glow.addColorStop(0.18, theme.colors[1]);
+      glow.addColorStop(0.4, theme.colors[2]);
+      glow.addColorStop(0.75, theme.colors[3]);
+      glow.addColorStop(1, theme.colors[4]);
+
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(0, 0, radius * pulse, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, radius * 1.15, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(255, 250, 200, 0.9)';
+      ctx.beginPath();
+      ctx.moveTo(0, -radius * 0.65);
+      ctx.lineTo(radius * 0.7, 0);
+      ctx.lineTo(0, radius * 0.65);
+      ctx.lineTo(-radius * 0.7, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawBodySegment(segmentX, segmentY, isHead = false) {
+      const theme = getCurrentTheme();
+      const x = segmentX * gridSize + 1;
+      const y = segmentY * gridSize + 1;
+      const size = gridSize - 2;
+
+      if (isHead) {
+        const headGradient = ctx.createLinearGradient(x, y, x + size, y + size);
+        headGradient.addColorStop(0, theme.color.head[0]);
+        headGradient.addColorStop(0.35, theme.color.head[1]);
+        headGradient.addColorStop(1, theme.color.head[2]);
+
+        ctx.fillStyle = headGradient;
+        ctx.fillRect(x, y, size, size);
+
+        ctx.fillStyle = 'rgba(10, 16, 20, 0.6)';
+        ctx.fillRect(x + 3, y + 2, 5, 5);
+        ctx.fillRect(x + size - 8, y + 2, 5, 5);
+
+        ctx.fillStyle = '#f6fffe';
+        const pupilOffsetX = dx === 1 ? 2 : dx === -1 ? -2 : 0;
+        const pupilOffsetY = dy === 1 ? 2 : dy === -1 ? -2 : 0;
+        ctx.fillRect(x + 4 + pupilOffsetX, y + 4 + pupilOffsetY, 2, 2);
+        ctx.fillRect(x + size - 6 + pupilOffsetX, y + 4 + pupilOffsetY, 2, 2);
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+        ctx.fillRect(x + 3, y + 3, 4, 3);
+        ctx.fillRect(x + size - 7, y + 3, 4, 3);
+        return;
+      }
+
+      const bodyGradient = ctx.createLinearGradient(x, y, x + size, y + size);
+      bodyGradient.addColorStop(0, theme.color.body[0]);
+      bodyGradient.addColorStop(0.5, theme.color.body[1]);
+      bodyGradient.addColorStop(1, theme.color.body[2]);
+
+      ctx.fillStyle = bodyGradient;
+      ctx.fillRect(x, y, size, size);
+
+      ctx.fillStyle = theme.skin.accent;
+      if (theme.skin.label === 'Pulse') {
+        ctx.fillRect(x + 2, y + 2, size * 0.65, 2);
+        ctx.fillRect(x + 2, y + size - 6, size * 0.6, 2);
+      } else if (theme.skin.label === 'Shadow') {
+        ctx.fillRect(x + 2, y + 2, size * 0.3, 3);
+        ctx.fillRect(x + size * 0.56, y + 2, size * 0.18, 3);
+      } else if (theme.skin.label === 'Arcade') {
+        ctx.fillRect(x + 2, y + 2, size * 0.25, 2);
+        ctx.fillRect(x + size * 0.52, y + 2, size * 0.18, 2);
+        ctx.fillRect(x + 4, y + size - 5, 3, 3);
+        ctx.fillRect(x + size - 9, y + size - 5, 3, 3);
+      } else if (theme.skin.label === 'Galaxy') {
+        ctx.fillRect(x + 2, y + 2, size * 0.24, 4);
+        ctx.fillRect(x + size * 0.62, y + 2, size * 0.18, 4);
+        ctx.fillRect(x + 4, y + size - 7, 2, 2);
+        ctx.fillRect(x + size - 8, y + size - 7, 2, 2);
+      } else {
+        ctx.fillRect(x + 2, y + 2, size * 0.25, 3);
+        ctx.fillRect(x + size * 0.56, y + 2, size * 0.18, 3);
+      }
+    }
+
+    function render() {
+      dx = nextDx;
+      dy = nextDy;
+
+      ctx.fillStyle = '#05060a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.06)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= tileCount; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * gridSize, 0);
+        ctx.lineTo(i * gridSize, canvas.height);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, i * gridSize);
+        ctx.lineTo(canvas.width, i * gridSize);
+        ctx.stroke();
+      }
+
+      drawWalls();
+      snake.forEach((part, index) => drawBodySegment(part.x, part.y, index === 0));
+      drawFood();
+    }
+
+    function gameOver() {
+      clearInterval(gameInterval);
+      gameInterval = null;
+      boardOverlay.textContent = 'Game Over';
+      boardOverlay.classList.remove('hidden');
+      setStatus('Game Over', 'danger');
+      saveProgress();
+    }
+
+    function setUpMapReset() {
+      const selectedMap = maps[currentMap];
+      snake = selectedMap.spawn.map(segment => ({ ...segment }));
+      dx = selectedMap.direction.x;
+      dy = selectedMap.direction.y;
+      nextDx = dx;
+      nextDy = dy;
+      food = randomFoodCell();
+      score = 0;
+      scoreEl.textContent = '0';
+      boardOverlay.classList.add('hidden');
+      setStatus('Map Ready', 'warn');
+      render();
+    }
+
+    function startGame() {
+      clearInterval(gameInterval);
+      syncMapAndDirection();
+      score = 0;
+      scoreEl.textContent = '0';
+      boardOverlay.classList.add('hidden');
+      setStatus('Playing');
+      gameInterval = setInterval(gameTick, difficultySettings[currentDifficulty]);
+    }
+
+    function gameTick() {
+      const head = { x: snake[0].x + nextDx, y: snake[0].y + nextDy };
+
+      if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+        gameOver();
+        return;
+      }
+
+      if (wallExists(head.x, head.y)) {
+        gameOver();
+        return;
+      }
+
+      for (let i = 0; i < snake.length; i++) {
+        if (snake[i].x === head.x && snake[i].y === head.y) {
+          gameOver();
+          return;
+        }
+      }
+
+      dx = nextDx;
+      dy = nextDy;
+      snake.unshift(head);
+
+      if (head.x === food.x && head.y === food.y) {
+        score += 10;
+        scoreEl.textContent = score;
+        if (score > highScore) {
+          highScore = score;
+          updateHighScoreDisplay();
+        }
+        food = randomFoodCell();
+      } else {
+        snake.pop();
+      }
+
+      render();
+    }
+
+    function changeDirection(newDx, newDy) {
+      if (newDx === -dx && newDy === -dy && snake.length > 1) return;
+      nextDx = newDx;
+      nextDy = newDy;
+    }
+
+    mapSelect.addEventListener('change', () => {
+      currentMap = mapSelect.value;
+      if (gameInterval) {
+        startGame();
+      } else {
+        setUpMapReset();
+      }
     });
-  }
 
-  buildOptions(snakeColorSelect, colorThemes, selectedColorKey);
-  buildOptions(snakeSkinSelect, skinThemes, selectedSkinKey);
-  buildOptions(foodStyleSelect, foodThemes, selectedFoodKey);
-}
-
-function openCustomizeMenu() {
-  populateCustomizationOptions();
-  customizeModal.classList.add('visible');
-  customizeModal.setAttribute('aria-hidden', 'false');
-}
-
-function closeCustomizeMenu() {
-  customizeModal.classList.remove('visible');
-  customizeModal.setAttribute('aria-hidden', 'true');
-}
-
-function applyChosenCustomization() {
-  selectedColorKey = snakeColorSelect.value;
-  selectedSkinKey = snakeSkinSelect.value;
-  selectedFoodKey = foodStyleSelect.value;
-  saveProgress();
-  closeCustomizeMenu();
-  drawGame();
-}
-
-function getCurrentTheme() {
-  const color = colorThemes[selectedColorKey] || colorThemes.classic;
-  const skin = skinThemes[selectedSkinKey] || skinThemes.classic;
-  const food = foodThemes[selectedFoodKey] || foodThemes.classic;
-  return { color, skin, food };
-}
-
-function getCurrentMap() {
-  return maps[currentMap];
-}
-
-function drawWalls() {
-  const wallColor = '#0e3b7a';
-  const wallGlow = '#6ce3ff';
-
-  getCurrentMap().walls.forEach(([wallX, wallY]) => {
-    const px = wallX * gridSize + 1;
-    const py = wallY * gridSize + 1;
-    const size = gridSize - 2;
-
-    ctx.fillStyle = wallColor;
-    ctx.fillRect(px, py, size, size);
-
-    ctx.strokeStyle = wallGlow;
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(px + 1, py + 1, size - 2, size - 2);
-  });
-}
-
-function drawFood() {
-  const theme = getCurrentTheme().food;
-  const x = food.x * gridSize + gridSize / 2;
-  const y = food.y * gridSize + gridSize / 2;
-  const radius = gridSize / 2 - 2;
-  const pulse = 1 + Math.sin(Date.now() * 0.01) * 0.18;
-
-  ctx.save();
-  ctx.translate(x, y);
-
-  ctx.shadowBlur = 25;
-  ctx.shadowColor = theme.glow;
-
-  const glow = ctx.createRadialGradient(0, 0, 2, 0, 0, radius * 2.4);
-  glow.addColorStop(0, theme.colors[0]);
-  glow.addColorStop(0.18, theme.colors[1]);
-  glow.addColorStop(0.4, theme.colors[2]);
-  glow.addColorStop(0.75, theme.colors[3]);
-  glow.addColorStop(1, theme.colors[4]);
-
-  ctx.fillStyle = glow;
-  ctx.beginPath();
-  ctx.arc(0, 0, radius * pulse, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.shadowBlur = 0;
-  ctx.strokeStyle = 'rgba(255,255,255,0.8)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(0, 0, radius * 1.15, 0, Math.PI * 2);
-  ctx.stroke();
-
-  ctx.fillStyle = 'rgba(255, 250, 200, 0.9)';
-  ctx.beginPath();
-  ctx.moveTo(0, -radius * 0.65);
-  ctx.lineTo(radius * 0.7, 0);
-  ctx.lineTo(0, radius * 0.65);
-  ctx.lineTo(-radius * 0.7, 0);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  ctx.fillRect(-2, -radius * 1.1, 4, radius * 0.7);
-  ctx.fillRect(-radius * 1.1, -2, radius * 0.7, 4);
-
-  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(-radius * 0.5, -radius * 0.8);
-  ctx.lineTo(-radius * 0.2, -radius * 0.3);
-  ctx.lineTo(-radius * 0.55, radius * 0.15);
-  ctx.moveTo(radius * 0.55, -radius * 0.8);
-  ctx.lineTo(radius * 0.2, -radius * 0.3);
-  ctx.lineTo(radius * 0.55, radius * 0.15);
-  ctx.stroke();
-
-  ctx.restore();
-}
-
-function drawBodySegment(segmentX, segmentY, isHead = false) {
-  const theme = getCurrentTheme();
-  const x = segmentX * gridSize + 1;
-  const y = segmentY * gridSize + 1;
-  const size = gridSize - 2;
-
-  if (isHead) {
-    const headGradient = ctx.createLinearGradient(x, y, x + size, y + size);
-    headGradient.addColorStop(0, theme.color.head[0]);
-    headGradient.addColorStop(0.35, theme.color.head[1]);
-    headGradient.addColorStop(1, theme.color.head[2]);
-
-    ctx.fillStyle = headGradient;
-    ctx.fillRect(x, y, size, size);
-
-    ctx.fillStyle = 'rgba(10, 16, 20, 0.6)';
-    ctx.fillRect(x + 3, y + 2, 5, 5);
-    ctx.fillRect(x + size - 8, y + 2, 5, 5);
-
-    ctx.fillStyle = '#f6fffe';
-    const pupilOffsetX = dx === 1 ? 2 : dx === -1 ? -2 : 0;
-    const pupilOffsetY = dy === 1 ? 2 : dy === -1 ? -2 : 0;
-
-    ctx.fillRect(x + 4 + pupilOffsetX, y + 4 + pupilOffsetY, 2, 2);
-    ctx.fillRect(x + size - 6 + pupilOffsetX, y + 4 + pupilOffsetY, 2, 2);
-
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
-    ctx.fillRect(x + 3, y + 3, 4, 3);
-    ctx.fillRect(x + size - 7, y + 3, 4, 3);
-
-    return;
-  }
-
-  const bodyGradient = ctx.createLinearGradient(x, y, x + size, y + size);
-  bodyGradient.addColorStop(0, theme.color.body[0]);
-  bodyGradient.addColorStop(0.5, theme.color.body[1]);
-  bodyGradient.addColorStop(1, theme.color.body[2]);
-
-  ctx.fillStyle = bodyGradient;
-  ctx.fillRect(x, y, size, size);
-
-  ctx.fillStyle = theme.skin.accent;
-  if (theme.skin.label === 'Pulse') {
-    ctx.fillRect(x + 2, y + 2, size * 0.65, 2);
-    ctx.fillRect(x + 2, y + size - 6, size * 0.6, 2);
-  } else if (theme.skin.label === 'Shadow') {
-    ctx.fillRect(x + 2, y + 2, size * 0.3, 3);
-    ctx.fillRect(x + size * 0.56, y + 2, size * 0.18, 3);
-  } else if (theme.skin.label === 'Arcade') {
-    ctx.fillRect(x + 2, y + 2, size * 0.25, 2);
-    ctx.fillRect(x + size * 0.52, y + 2, size * 0.18, 2);
-    ctx.fillRect(x + 4, y + size - 5, 3, 3);
-    ctx.fillRect(x + size - 9, y + size - 5, 3, 3);
-  } else if (theme.skin.label === 'Galaxy') {
-    ctx.fillRect(x + 2, y + 2, size * 0.24, 4);
-    ctx.fillRect(x + size * 0.62, y + 2, size * 0.18, 4);
-    ctx.fillRect(x + 4, y + size - 7, 2, 2);
-    ctx.fillRect(x + size - 8, y + size - 7, 2, 2);
-  } else {
-    ctx.fillRect(x + 2, y + 2, size * 0.25, 3);
-    ctx.fillRect(x + size * 0.56, y + 2, size * 0.18, 3);
-  }
-
-  ctx.fillStyle = 'rgba(15, 25, 35, 0.18)';
-  for (let i = 0; i < 3; i++) {
-    ctx.fillRect(x + 4 + i * 5, y + size - 5, 2, 3);
-  }
-}
-
-function wallExists(x, y) {
-  return getCurrentMap().walls.some(([wallX, wallY]) => wallX === x && wallY === y);
-}
-
-function drawGame() {
-  dx = nextDx;
-  dy = nextDy;
-
-  const head = { x: snake[0].x + dx, y: snake[0].y + dy };
-
-  if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
-    gameOver();
-    return;
-  }
-
-  if (wallExists(head.x, head.y)) {
-    gameOver();
-    return;
-  }
-
-  for (let i = 0; i < snake.length; i++) {
-    if (snake[i].x === head.x && snake[i].y === head.y) {
-      gameOver();
-      return;
-    }
-  }
-
-  snake.unshift(head);
-
-  if (head.x === food.x && head.y === food.y) {
-    score += 10;
-    scoreEl.textContent = score;
-    if (score > highScore) {
-      highScore = score;
-      updateHighScoreDisplay();
-    }
-    placeFood();
-  } else {
-    snake.pop();
-  }
-
-  ctx.fillStyle = '#05060a';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.strokeStyle = 'rgba(0, 240, 255, 0.06)';
-  ctx.lineWidth = 1;
-  for (let i = 0; i <= tileCount; i++) {
-    ctx.beginPath();
-    ctx.moveTo(i * gridSize, 0);
-    ctx.lineTo(i * gridSize, canvas.height);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(0, i * gridSize);
-    ctx.lineTo(canvas.width, i * gridSize);
-    ctx.stroke();
-  }
-
-  drawWalls();
-
-  snake.forEach((part, index) => {
-    drawBodySegment(part.x, part.y, index === 0);
-  });
-
-  drawFood();
-}
-
-function placeFood() {
-  let attempts = 0;
-
-  while (attempts < 500) {
-    const x = Math.floor(Math.random() * tileCount);
-    const y = Math.floor(Math.random() * tileCount);
-
-    const collidesWithSnake = snake.some(part => part.x === x && part.y === y);
-    const collidesWithWall = wallExists(x, y);
-
-    if (!collidesWithSnake && !collidesWithWall) {
-      food.x = x;
-      food.y = y;
-      return;
-    }
-
-    attempts += 1;
-  }
-
-  food = { x: 15, y: 15 };
-}
-
-function changeDirection(newDx, newDy) {
-  if (newDx === -dx && newDx !== 0) return;
-  if (newDy === -dy && newDy !== 0) return;
-  nextDx = newDx;
-  nextDy = newDy;
-}
-
-function gameOver() {
-  clearInterval(gameInterval);
-  gameInterval = null;
-  boardOverlay.textContent = 'Game Over';
-  boardOverlay.classList.remove('hidden');
-  setStatus('Game Over', 'danger');
-  saveProgress();
-}
-
-function startGame() {
-  clearInterval(gameInterval);
-
-  speed = difficultySettings[currentDifficulty];
-  const selectedMap = getCurrentMap();
-
-  snake = selectedMap.spawn.map(part => ({ ...part }));
-  dx = selectedMap.direction.x;
-  dy = selectedMap.direction.y;
-  nextDx = dx;
-  nextDy = dy;
-  score = 0;
-  scoreEl.textContent = score;
-  boardOverlay.classList.add('hidden');
-  setStatus('Playing');
-
-  placeFood();
-  drawGame();
-  gameInterval = setInterval(drawGame, speed);
-}
-
-window.addEventListener('keydown', e => {
-  switch (e.key) {
-    case 'ArrowUp':
-    case 'w':
-    case 'W':
-      changeDirection(0, -1);
-      break;
-    case 'ArrowDown':
-    case 's':
-    case 'S':
-      changeDirection(0, 1);
-      break;
-    case 'ArrowLeft':
-    case 'a':
-    case 'A':
-      changeDirection(-1, 0);
-      break;
-    case 'ArrowRight':
-    case 'd':
-    case 'D':
-      changeDirection(1, 0);
-      break;
-  }
-});
-
-document.getElementById('btn-up').addEventListener('click', () => changeDirection(0, -1));
-document.getElementById('btn-down').addEventListener('click', () => changeDirection(0, 1));
-document.getElementById('btn-left').addEventListener('click', () => changeDirection(-1, 0));
-document.getElementById('btn-right').addEventListener('click', () => changeDirection(1, 0));
-document.getElementById('btn-start').addEventListener('click', startGame);
-
-mapSelect.addEventListener('change', () => {
-  currentMap = mapSelect.value;
-  setStatus('Map Ready', 'warn');
-  if (gameInterval) {
-    startGame();
-  } else {
-    drawGame();
-  }
-});
-
-difficultySelect.addEventListener('change', () => {
-  currentDifficulty = difficultySelect.value;
-  setStatus('Difficulty Set', 'warn');
-  if (gameInterval) {
-    startGame();
-  }
-});
-
-btnCustomize.addEventListener('click', openCustomizeMenu);
-closeCustomize.addEventListener('click', closeCustomizeMenu);
-saveCustomize.addEventListener('click', applyChosenCustomization);
-customizeModal.addEventListener('click', (event) => {
-  if (event.target === customizeModal) closeCustomizeMenu();
-});
-
-loadProgress();
-getAvailableThemeList();
-currentMap = mapSelect.value;
-currentDifficulty = difficultySelect.value;
-updateHighScoreDisplay();
-populateCustomizationOptions();
-setStatus('Ready');
-placeFood();
-drawGame();
-</script>
+    difficultySelect.addEventListener('change', () => {
+      currentDifficulty = difficultySelect.value;
+      if (gameInterval) startGame();
+      else setStatus('Ready');
+    });
+
+    document.getElementById('btn-start').addEventListener('click', startGame);
+    document.getElementById('btn-up').addEventListener('click', () => changeDirection(0, -1));
+    document.getElementById('btn-down').addEventListener('click', () => changeDirection(0, 1));
+    document.getElementById('btn-left').addEventListener('click', () => changeDirection(-1, 0));
+    document.getElementById('btn-right').addEventListener('click', () => changeDirection(1, 0));
+
+    window.addEventListener('keydown', (event) => {
+      switch (event.key) {
+        case 'ArrowUp': case 'w': case 'W': changeDirection(0, -1); break;
+        case 'ArrowDown': case 's': case 'S': changeDirection(0, 1); break;
+        case 'ArrowLeft': case 'a': case 'A': changeDirection(-1, 0); break;
+        case 'ArrowRight': case 'd': case 'D': changeDirection(1, 0); break;
+      }
+    });
+
+    btnCustomize.addEventListener('click', openCustomizeMenu);
+    closeCustomize.addEventListener('click', closeCustomizeMenu);
+    saveCustomize.addEventListener('click', applyChosenCustomization);
+    customizeModal.addEventListener('click', (event) => {
+      if (event.target === customizeModal) closeCustomizeMenu();
+    });
+
+    loadProgress();
+    highScoreEl.textContent = highScore;
+    setStatus('Ready');
+    setUpMapReset();
+  </script>
 </body>
 </html>

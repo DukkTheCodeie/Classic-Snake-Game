@@ -287,6 +287,12 @@ body {
   border-color: rgba(110, 247, 178, 0.5);
 }
 
+#btn-customize {
+  width: 100%;
+  background: linear-gradient(135deg, rgba(167, 120, 255, 0.16), rgba(255, 91, 189, 0.14));
+  border-color: rgba(167, 120, 255, 0.45);
+}
+
 #btn-left, #btn-right, #btn-up, #btn-down {
   min-height: 46px;
 }
@@ -335,6 +341,105 @@ canvas {
 
 .board-overlay.hidden {
   opacity: 0;
+}
+
+.customize-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(3, 7, 16, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.customize-modal.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.customize-panel {
+  width: min(92vw, 520px);
+  background: linear-gradient(180deg, rgba(20, 27, 41, 0.96), rgba(12, 16, 26, 0.96));
+  border: 1px solid rgba(157, 169, 194, 0.18);
+  border-radius: 22px;
+  padding: 20px 18px 16px;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.4);
+}
+
+.customize-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.customize-header h2 {
+  font-size: 1.15rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.close-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.02);
+  color: var(--text);
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.customize-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.custom-row {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.custom-row label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.custom-row select {
+  width: 100%;
+  background: rgba(9, 15, 26, 0.7);
+  border: 1px solid rgba(117, 225, 255, 0.32);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  outline: none;
+}
+
+.custom-row span.unlock-text {
+  font-size: 0.7rem;
+  color: var(--gold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.customize-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
 }
 
 @media (max-width: 800px) {
@@ -410,12 +515,43 @@ canvas {
           <button class="btn" id="btn-right">RIGHT</button>
         </div>
         <button class="btn" id="btn-start" style="margin-top: 8px;">START / RESTART</button>
+        <button class="btn" id="btn-customize">Customize</button>
       </div>
     </div>
 
     <div class="board-frame">
       <canvas id="gameCanvas" width="400" height="400"></canvas>
       <div class="board-overlay hidden" id="board-overlay">Game Over</div>
+    </div>
+  </div>
+</div>
+
+<div class="customize-modal" id="customize-modal" aria-hidden="true">
+  <div class="customize-panel" role="dialog" aria-modal="true" aria-labelledby="customize-title">
+    <div class="customize-header">
+      <h2 id="customize-title">Customize</h2>
+      <button class="close-btn" id="close-customize" aria-label="Close customize menu">×</button>
+    </div>
+
+    <div class="customize-grid">
+      <div class="custom-row">
+        <label for="snake-color-select">Snake Color</label>
+        <select id="snake-color-select"></select>
+      </div>
+
+      <div class="custom-row">
+        <label for="snake-skin-select">Snake Skin</label>
+        <select id="snake-skin-select"></select>
+      </div>
+
+      <div class="custom-row">
+        <label for="food-style-select">Food Style</label>
+        <select id="food-style-select"></select>
+      </div>
+    </div>
+
+    <div class="customize-actions">
+      <button class="btn" id="save-customize">Save</button>
     </div>
   </div>
 </div>
@@ -429,8 +565,15 @@ const difficultySelect = document.getElementById('difficulty-select');
 const mapSelect = document.getElementById('map-select');
 const statusPill = document.getElementById('status-pill');
 const boardOverlay = document.getElementById('board-overlay');
+const customizeModal = document.getElementById('customize-modal');
+const closeCustomize = document.getElementById('close-customize');
+const saveCustomize = document.getElementById('save-customize');
+const btnCustomize = document.getElementById('btn-customize');
+const snakeColorSelect = document.getElementById('snake-color-select');
+const snakeSkinSelect = document.getElementById('snake-skin-select');
+const foodStyleSelect = document.getElementById('food-style-select');
 
-const STORAGE_KEY = 'classic-snake-high-score';
+const STORAGE_KEY = 'classic-snake-progress-v1';
 const gridSize = 20;
 const tileCount = canvas.width / gridSize;
 
@@ -439,6 +582,30 @@ const difficultySettings = {
   medium: 100,
   hard: 75,
   insane: 55
+};
+
+const colorThemes = {
+  classic: { label: 'Classic Green', minScore: 0, head: ['#b7ff7a', '#55ff88', '#1bcf73'], body: ['#67ffd5', '#21e6b2', '#00b7d8'] },
+  electric: { label: 'Electric Blue', minScore: 50, head: ['#8fe7ff', '#4ad5ff', '#1d8cff'], body: ['#5ee3ff', '#34d3a1', '#2bb3ff'] },
+  ruby: { label: 'Ruby Red', minScore: 120, head: ['#ffb4b4', '#ff6b6b', '#ff3d5a'], body: ['#ff7b7b', '#ff4d84', '#ff2d6d'] },
+  violet: { label: 'Violet Pulse', minScore: 220, head: ['#f2d1ff', '#ce8bff', '#9d4dff'], body: ['#d7b5ff', '#af6aff', '#7a52ff'] },
+  gold: { label: 'Golden Rush', minScore: 360, head: ['#ffe8a3', '#ffcc66', '#ff9f1c'], body: ['#ffd36c', '#ffb347', '#ff7a18'] }
+};
+
+const skinThemes = {
+  classic: { label: 'Classic', minScore: 0, accent: 'rgba(255,255,255,0.18)' },
+  pulse: { label: 'Pulse', minScore: 60, accent: 'rgba(117, 225, 255, 0.45)' },
+  shadow: { label: 'Shadow', minScore: 140, accent: 'rgba(167,120,255,0.38)' },
+  arcade: { label: 'Arcade', minScore: 260, accent: 'rgba(255, 255, 255, 0.3)' },
+  galaxy: { label: 'Galaxy', minScore: 420, accent: 'rgba(255, 191, 94, 0.34)' }
+};
+
+const foodThemes = {
+  classic: { label: 'Classic Fruit', minScore: 0, glow: '#ff4d8d', colors: ['#fff7ff', '#ffd9f2', '#ff4d8d', '#ff1f6d', '#7a0737'] },
+  mint: { label: 'Mint Burst', minScore: 80, glow: '#60f5c1', colors: ['#e9fff8', '#bdffe6', '#60f5c1', '#18c98a', '#0a6f50'] },
+  plasma: { label: 'Plasma Orb', minScore: 170, glow: '#9d7bff', colors: ['#f4ebff', '#dfd2ff', '#9d7bff', '#7a52ff', '#2a0d56'] },
+  sunrise: { label: 'Sunrise', minScore: 300, glow: '#ffaf3b', colors: ['#fff6d5', '#ffea9f', '#ffaf3b', '#ff7b00', '#7a3200'] },
+  crystal: { label: 'Crystal Core', minScore: 500, glow: '#7af7ff', colors: ['#effeff', '#d7fdff', '#7af7ff', '#3bc6ff', '#0d3d6d'] }
 };
 
 const maps = {
@@ -496,11 +663,64 @@ let dy = 0;
 let nextDx = 1;
 let nextDy = 0;
 let score = 0;
-let highScore = Number(localStorage.getItem(STORAGE_KEY)) || 0;
+let highScore = 0;
 let gameInterval = null;
 let speed = difficultySettings.medium;
 let currentMap = mapSelect.value;
 let currentDifficulty = difficultySelect.value;
+
+let selectedColorKey = 'classic';
+let selectedSkinKey = 'classic';
+let selectedFoodKey = 'classic';
+
+function loadProgress() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (typeof parsed.highScore === 'number') highScore = parsed.highScore;
+    if (parsed.snakeColor) selectedColorKey = parsed.snakeColor;
+    if (parsed.snakeSkin) selectedSkinKey = parsed.snakeSkin;
+    if (parsed.foodStyle) selectedFoodKey = parsed.foodStyle;
+  } catch (error) {
+    console.warn('Unable to load snake progress', error);
+  }
+}
+
+function saveProgress() {
+  const payload = {
+    highScore,
+    snakeColor: selectedColorKey,
+    snakeSkin: selectedSkinKey,
+    foodStyle: selectedFoodKey
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+}
+
+function getUnlockedOptions() {
+  return {
+    color: Object.entries(colorThemes).filter(([key, theme]) => highScore >= theme.minScore).map(([key]) => key),
+    skin: Object.entries(skinThemes).filter(([key, theme]) => highScore >= theme.minScore).map(([key]) => key),
+    food: Object.entries(foodThemes).filter(([key, theme]) => highScore >= theme.minScore).map(([key]) => key)
+  };
+}
+
+function getAvailableThemeList() {
+  const unlocked = getUnlockedOptions();
+  const choose = (list, current, fallback) => {
+    if (list.includes(current)) return current;
+    return fallback;
+  };
+
+  selectedColorKey = choose(unlocked.color, selectedColorKey, 'classic');
+  selectedSkinKey = choose(unlocked.skin, selectedSkinKey, 'classic');
+  selectedFoodKey = choose(unlocked.food, selectedFoodKey, 'classic');
+}
+
+function updateHighScoreDisplay() {
+  highScoreEl.textContent = highScore;
+  saveProgress();
+}
 
 function setStatus(label, kind = '') {
   statusPill.textContent = label;
@@ -509,9 +729,52 @@ function setStatus(label, kind = '') {
   if (kind === 'danger') statusPill.classList.add('danger');
 }
 
-function updateHighScoreDisplay() {
-  highScoreEl.textContent = highScore;
-  localStorage.setItem(STORAGE_KEY, String(highScore));
+function populateCustomizationOptions() {
+  const unlocked = getUnlockedOptions();
+
+  function buildOptions(select, optionsMap, currentValue) {
+    select.innerHTML = '';
+    Object.entries(optionsMap).forEach(([key, option]) => {
+      const unlockedForThis = unlocked[select.id.includes('color') ? 'color' : select.id.includes('skin') ? 'skin' : 'food'].includes(key);
+      const optionEl = document.createElement('option');
+      optionEl.value = key;
+      optionEl.textContent = `${option.label}${unlockedForThis ? '' : ' (Locked: ' + option.minScore + ')'}`;
+      optionEl.disabled = !unlockedForThis;
+      if (key === currentValue) optionEl.selected = true;
+      select.appendChild(optionEl);
+    });
+  }
+
+  buildOptions(snakeColorSelect, colorThemes, selectedColorKey);
+  buildOptions(snakeSkinSelect, skinThemes, selectedSkinKey);
+  buildOptions(foodStyleSelect, foodThemes, selectedFoodKey);
+}
+
+function openCustomizeMenu() {
+  populateCustomizationOptions();
+  customizeModal.classList.add('visible');
+  customizeModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeCustomizeMenu() {
+  customizeModal.classList.remove('visible');
+  customizeModal.setAttribute('aria-hidden', 'true');
+}
+
+function applyChosenCustomization() {
+  selectedColorKey = snakeColorSelect.value;
+  selectedSkinKey = snakeSkinSelect.value;
+  selectedFoodKey = foodStyleSelect.value;
+  saveProgress();
+  closeCustomizeMenu();
+  drawGame();
+}
+
+function getCurrentTheme() {
+  const color = colorThemes[selectedColorKey] || colorThemes.classic;
+  const skin = skinThemes[selectedSkinKey] || skinThemes.classic;
+  const food = foodThemes[selectedFoodKey] || foodThemes.classic;
+  return { color, skin, food };
 }
 
 function getCurrentMap() {
@@ -537,6 +800,7 @@ function drawWalls() {
 }
 
 function drawFood() {
+  const theme = getCurrentTheme().food;
   const x = food.x * gridSize + gridSize / 2;
   const y = food.y * gridSize + gridSize / 2;
   const radius = gridSize / 2 - 2;
@@ -546,14 +810,14 @@ function drawFood() {
   ctx.translate(x, y);
 
   ctx.shadowBlur = 25;
-  ctx.shadowColor = '#ff4d8d';
+  ctx.shadowColor = theme.glow;
 
   const glow = ctx.createRadialGradient(0, 0, 2, 0, 0, radius * 2.4);
-  glow.addColorStop(0, '#fff7ff');
-  glow.addColorStop(0.18, '#ffd9f2');
-  glow.addColorStop(0.4, '#ff4d8d');
-  glow.addColorStop(0.75, '#ff1f6d');
-  glow.addColorStop(1, '#7a0737');
+  glow.addColorStop(0, theme.colors[0]);
+  glow.addColorStop(0.18, theme.colors[1]);
+  glow.addColorStop(0.4, theme.colors[2]);
+  glow.addColorStop(0.75, theme.colors[3]);
+  glow.addColorStop(1, theme.colors[4]);
 
   ctx.fillStyle = glow;
   ctx.beginPath();
@@ -595,15 +859,16 @@ function drawFood() {
 }
 
 function drawBodySegment(segmentX, segmentY, isHead = false) {
+  const theme = getCurrentTheme();
   const x = segmentX * gridSize + 1;
   const y = segmentY * gridSize + 1;
   const size = gridSize - 2;
 
   if (isHead) {
     const headGradient = ctx.createLinearGradient(x, y, x + size, y + size);
-    headGradient.addColorStop(0, '#b7ff7a');
-    headGradient.addColorStop(0.35, '#55ff88');
-    headGradient.addColorStop(1, '#1bcf73');
+    headGradient.addColorStop(0, theme.color.head[0]);
+    headGradient.addColorStop(0.35, theme.color.head[1]);
+    headGradient.addColorStop(1, theme.color.head[2]);
 
     ctx.fillStyle = headGradient;
     ctx.fillRect(x, y, size, size);
@@ -627,16 +892,34 @@ function drawBodySegment(segmentX, segmentY, isHead = false) {
   }
 
   const bodyGradient = ctx.createLinearGradient(x, y, x + size, y + size);
-  bodyGradient.addColorStop(0, '#67ffd5');
-  bodyGradient.addColorStop(0.5, '#21e6b2');
-  bodyGradient.addColorStop(1, '#00b7d8');
+  bodyGradient.addColorStop(0, theme.color.body[0]);
+  bodyGradient.addColorStop(0.5, theme.color.body[1]);
+  bodyGradient.addColorStop(1, theme.color.body[2]);
 
   ctx.fillStyle = bodyGradient;
   ctx.fillRect(x, y, size, size);
 
-  ctx.fillStyle = 'rgba(255,255,255,0.18)';
-  ctx.fillRect(x + 2, y + 2, size * 0.25, 3);
-  ctx.fillRect(x + size * 0.56, y + 2, size * 0.18, 3);
+  ctx.fillStyle = theme.skin.accent;
+  if (theme.skin.label === 'Pulse') {
+    ctx.fillRect(x + 2, y + 2, size * 0.65, 2);
+    ctx.fillRect(x + 2, y + size - 6, size * 0.6, 2);
+  } else if (theme.skin.label === 'Shadow') {
+    ctx.fillRect(x + 2, y + 2, size * 0.3, 3);
+    ctx.fillRect(x + size * 0.56, y + 2, size * 0.18, 3);
+  } else if (theme.skin.label === 'Arcade') {
+    ctx.fillRect(x + 2, y + 2, size * 0.25, 2);
+    ctx.fillRect(x + size * 0.52, y + 2, size * 0.18, 2);
+    ctx.fillRect(x + 4, y + size - 5, 3, 3);
+    ctx.fillRect(x + size - 9, y + size - 5, 3, 3);
+  } else if (theme.skin.label === 'Galaxy') {
+    ctx.fillRect(x + 2, y + 2, size * 0.24, 4);
+    ctx.fillRect(x + size * 0.62, y + 2, size * 0.18, 4);
+    ctx.fillRect(x + 4, y + size - 7, 2, 2);
+    ctx.fillRect(x + size - 8, y + size - 7, 2, 2);
+  } else {
+    ctx.fillRect(x + 2, y + 2, size * 0.25, 3);
+    ctx.fillRect(x + size * 0.56, y + 2, size * 0.18, 3);
+  }
 
   ctx.fillStyle = 'rgba(15, 25, 35, 0.18)';
   for (let i = 0; i < 3; i++) {
@@ -746,6 +1029,7 @@ function gameOver() {
   boardOverlay.textContent = 'Game Over';
   boardOverlay.classList.remove('hidden');
   setStatus('Game Over', 'danger');
+  saveProgress();
 }
 
 function startGame() {
@@ -818,9 +1102,19 @@ difficultySelect.addEventListener('change', () => {
   }
 });
 
+btnCustomize.addEventListener('click', openCustomizeMenu);
+closeCustomize.addEventListener('click', closeCustomizeMenu);
+saveCustomize.addEventListener('click', applyChosenCustomization);
+customizeModal.addEventListener('click', (event) => {
+  if (event.target === customizeModal) closeCustomizeMenu();
+});
+
+loadProgress();
+getAvailableThemeList();
 currentMap = mapSelect.value;
 currentDifficulty = difficultySelect.value;
 updateHighScoreDisplay();
+populateCustomizationOptions();
 setStatus('Ready');
 placeFood();
 drawGame();

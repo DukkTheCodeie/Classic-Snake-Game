@@ -799,6 +799,15 @@
 
     function setDirection(nx, ny) {
       if (nx === -dx && ny === -dy) return;
+
+      if (snake.length > 0 && (dx !== 0) !== (nx !== 0)) {
+        const head = snake[0];
+        const cellX = Math.round(head.x / gridSize);
+        const cellY = Math.round(head.y / gridSize);
+        head.x = (cellX + 0.5) * gridSize;
+        head.y = (cellY + 0.5) * gridSize;
+      }
+
       nextDx = nx;
       nextDy = ny;
     }
@@ -809,33 +818,9 @@
 
       const speed = difficultySettings[currentDifficulty] || difficultySettings.medium;
       const head = snake[0];
-      const prevCellX = Math.floor(head.x / gridSize);
-      const prevCellY = Math.floor(head.y / gridSize);
-
+      const previousHead = { x: head.x, y: head.y };
       head.x += dx * speed * delta;
       head.y += dy * speed * delta;
-
-      const currentCellX = Math.floor(head.x / gridSize);
-      const currentCellY = Math.floor(head.y / gridSize);
-
-      // Smoothly glide between grid centers while keeping grid-based movement logic.
-      if (currentCellX !== prevCellX || currentCellY !== prevCellY) {
-        head.x = (currentCellX + 0.5) * gridSize;
-        head.y = (currentCellY + 0.5) * gridSize;
-      }
-
-      for (let i = snake.length - 1; i > 0; i--) {
-        const current = snake[i];
-        const previous = snake[i - 1];
-        const distance = Math.hypot(previous.x - current.x, previous.y - current.y);
-        const targetDistance = gridSize * 0.9;
-
-        if (distance > targetDistance) {
-          const angle = Math.atan2(previous.y - current.y, previous.x - current.x);
-          current.x = previous.x - Math.cos(angle) * targetDistance;
-          current.y = previous.y - Math.sin(angle) * targetDistance;
-        }
-      }
 
       const headCellX = Math.floor(head.x / gridSize);
       const headCellY = Math.floor(head.y / gridSize);
@@ -849,6 +834,19 @@
       ) {
         gameOver();
         return;
+      }
+
+      for (let i = snake.length - 1; i > 0; i--) {
+        const current = snake[i];
+        const previous = snake[i - 1];
+        const distance = Math.hypot(previous.x - current.x, previous.y - current.y);
+        const targetDistance = gridSize * 0.9;
+
+        if (distance > targetDistance) {
+          const angle = Math.atan2(previous.y - current.y, previous.x - current.x);
+          current.x = previous.x - Math.cos(angle) * targetDistance;
+          current.y = previous.y - Math.sin(angle) * targetDistance;
+        }
       }
 
       for (let i = 1; i < snake.length; i++) {
@@ -873,6 +871,15 @@
         }
 
         food = randomFoodCell();
+      }
+
+      if (previousHead.x !== head.x || previousHead.y !== head.y) {
+        const snappedX = Math.round(head.x / gridSize) * gridSize + gridSize / 2;
+        const snappedY = Math.round(head.y / gridSize) * gridSize + gridSize / 2;
+        if (Math.abs(head.x - snappedX) < 0.4 && Math.abs(head.y - snappedY) < 0.4) {
+          head.x = snappedX;
+          head.y = snappedY;
+        }
       }
     }
 

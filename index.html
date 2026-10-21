@@ -460,6 +460,7 @@
     const closeCustomize = document.getElementById('close-customize');
     const saveCustomize = document.getElementById('save-customize');
     const btnCustomize = document.getElementById('btn-customize');
+    const btnStart = document.getElementById('btn-start');
     const snakeColorSelect = document.getElementById('snake-color-select');
     const snakeSkinSelect = document.getElementById('snake-skin-select');
     const foodStyleSelect = document.getElementById('food-style-select');
@@ -467,31 +468,40 @@
     const STORAGE_KEY = 'classic-snake-progress-v1';
     const gridSize = 20;
     const tileCount = canvas.width / gridSize;
-
     const difficultySettings = { easy: 130, medium: 100, hard: 75, insane: 55 };
 
     const colorThemes = {
       classic: { label: 'Classic Green', minScore: 0, head: ['#b7ff7a', '#55ff88', '#1bcf73'], body: ['#67ffd5', '#21e6b2', '#00b7d8'] },
-      electric: { label: 'Electric Blue', minScore: 50, head: ['#8fe7ff', '#4ad5ff', '#1d8cff'], body: ['#5ee3ff', '#34d3a1', '#2bb3ff'] },
-      ruby: { label: 'Ruby Red', minScore: 120, head: ['#ffb4b4', '#ff6b6b', '#ff3d5a'], body: ['#ff7b7b', '#ff4d84', '#ff2d6d'] },
-      violet: { label: 'Violet Pulse', minScore: 220, head: ['#f2d1ff', '#ce8bff', '#9d4dff'], body: ['#d7b5ff', '#af6aff', '#7a52ff'] },
-      gold: { label: 'Golden Rush', minScore: 360, head: ['#ffe8a3', '#ffcc66', '#ff9f1c'], body: ['#ffd36c', '#ffb347', '#ff7a18'] }
+      electric: { label: 'Electric Blue', minScore: 60, head: ['#8fe7ff', '#4ad5ff', '#1d8cff'], body: ['#5ee3ff', '#34d3a1', '#2bb3ff'] },
+      ruby: { label: 'Ruby Red', minScore: 140, head: ['#ffb4b4', '#ff6b6b', '#ff3d5a'], body: ['#ff7b7b', '#ff4d84', '#ff2d6d'] },
+      violet: { label: 'Violet Pulse', minScore: 260, head: ['#f2d1ff', '#ce8bff', '#9d4dff'], body: ['#d7b5ff', '#af6aff', '#7a52ff'] },
+      gold: { label: 'Golden Rush', minScore: 420, head: ['#ffe8a3', '#ffcc66', '#ff9f1c'], body: ['#ffd36c', '#ffb347', '#ff7a18'] },
+      emerald: { label: 'Emerald Flux', minScore: 620, head: ['#d6ffe6', '#7af7c9', '#1fc38a'], body: ['#a6f5cb', '#46dc96', '#1cad7d'] },
+      sunrise: { label: 'Sunset Fade', minScore: 860, head: ['#ffe2b3', '#ff9f66', '#ff5f6d'], body: ['#ffd3a3', '#ff8b5e', '#ff5a7f'] },
+      obsidian: { label: 'Obsidian', minScore: 1120, head: ['#f0f4ff', '#7a8ca8', '#2e3952'], body: ['#bac7df', '#6b7ea6', '#3f4d6d'] }
     };
 
     const skinThemes = {
       classic: { label: 'Classic', minScore: 0, accent: 'rgba(255,255,255,0.18)' },
-      pulse: { label: 'Pulse', minScore: 60, accent: 'rgba(117, 225, 255, 0.45)' },
-      shadow: { label: 'Shadow', minScore: 140, accent: 'rgba(167,120,255,0.38)' },
-      arcade: { label: 'Arcade', minScore: 260, accent: 'rgba(255, 255, 255, 0.30)' },
-      galaxy: { label: 'Galaxy', minScore: 420, accent: 'rgba(255, 191, 94, 0.34)' }
+      pulse: { label: 'Pulse', minScore: 70, accent: 'rgba(117, 225, 255, 0.45)' },
+      shadow: { label: 'Shadow', minScore: 170, accent: 'rgba(167,120,255,0.38)' },
+      arcade: { label: 'Arcade', minScore: 280, accent: 'rgba(255, 255, 255, 0.30)' },
+      galaxy: { label: 'Galaxy', minScore: 440, accent: 'rgba(255, 191, 94, 0.34)' },
+      dragon: { label: 'Dragon', minScore: 660, accent: 'rgba(255, 99, 132, 0.42)' },
+      stealth: { label: 'Stealth', minScore: 920, accent: 'rgba(119, 247, 192, 0.36)' },
+      prism: { label: 'Prism', minScore: 1200, accent: 'rgba(135, 255, 255, 0.42)' }
     };
 
     const foodThemes = {
-      classic: { label: 'Classic Fruit', minScore: 0, glow: '#ff4d8d', colors: ['#fff7ff', '#ffd9f2', '#ff4d8d', '#ff1f6d', '#7a0737'] },
-      mint: { label: 'Mint Burst', minScore: 80, glow: '#60f5c1', colors: ['#e9fff8', '#bdffe6', '#60f5c1', '#18c98a', '#0a6f50'] },
-      plasma: { label: 'Plasma Orb', minScore: 170, glow: '#9d7bff', colors: ['#f4ebff', '#dfd2ff', '#9d7bff', '#7a52ff', '#2a0d56'] },
-      sunrise: { label: 'Sunrise', minScore: 300, glow: '#ffaf3b', colors: ['#fff6d5', '#ffea9f', '#ffaf3b', '#ff7b00', '#7a3200'] },
-      crystal: { label: 'Crystal Core', minScore: 500, glow: '#7af7ff', colors: ['#effeff', '#d7fdff', '#7af7ff', '#3bc6ff', '#0d3d6d'] }
+      apple: { label: 'Apple', minScore: 0, shape: 'apple', glow: '#ff5a7d', colors: ['#ffeef3', '#ffc3d1', '#ff5a7d', '#ed2f5f', '#661122'] },
+      berry: { label: 'Berry', minScore: 40, shape: 'berry', glow: '#a66dff', colors: ['#f7ebff', '#d5b6ff', '#8d5cff', '#6b35d9', '#2e1657'] },
+      lemon: { label: 'Lemon', minScore: 110, shape: 'lemon', glow: '#f9d86b', colors: ['#fffde8', '#fff1a8', '#f9d86b', '#f4b942', '#7a4a00'] },
+      grape: { label: 'Grape', minScore: 200, shape: 'grape', glow: '#b06aff', colors: ['#f3ebff', '#ddc3ff', '#a460ff', '#7d41da', '#2a0f4d'] },
+      orange: { label: 'Orange', minScore: 320, shape: 'orange', glow: '#ff9f43', colors: ['#fff1d8', '#ffd69e', '#ff9f43', '#ff6a00', '#7a2900'] },
+      watermelon: { label: 'Watermelon', minScore: 500, shape: 'watermelon', glow: '#ff5b75', colors: ['#fff7f3', '#ffb9c8', '#ff5b75', '#fc2949', '#650f1a'] },
+      peach: { label: 'Peach', minScore: 700, shape: 'peach', glow: '#ffbf8d', colors: ['#fff3e8', '#ffd4ad', '#ffbf8d', '#ff8a4a', '#7d3d16'] },
+      starfruit: { label: 'Starfruit', minScore: 980, shape: 'starfruit', glow: '#80e5a3', colors: ['#ecfff0', '#c2f0d0', '#80e5a3', '#35b87c', '#0f5a34'] },
+      mango: { label: 'Mango', minScore: 1300, shape: 'mango', glow: '#ffbd5a', colors: ['#fff5d9', '#ffd989', '#ffbd5a', '#ff8b2b', '#7c3d08'] }
     };
 
     const maps = {
@@ -595,7 +605,7 @@
     let currentDifficulty = difficultySelect.value;
     let selectedColorKey = 'classic';
     let selectedSkinKey = 'classic';
-    let selectedFoodKey = 'classic';
+    let selectedFoodKey = 'apple';
     let swipeStart = null;
 
     function roundedRectPath(x, y, width, height, radius) {
@@ -662,9 +672,9 @@
       function buildOptions(select, optionsMap, currentValue) {
         select.innerHTML = '';
         let hasValidCurrent = false;
+        const keyName = select.id.includes('color') ? 'color' : select.id.includes('skin') ? 'skin' : 'food';
 
         Object.entries(optionsMap).forEach(([key, option]) => {
-          const keyName = select.id.includes('color') ? 'color' : select.id.includes('skin') ? 'skin' : 'food';
           const unlockedForThis = unlocked[keyName].includes(key);
           const optionEl = document.createElement('option');
           optionEl.value = key;
@@ -680,8 +690,10 @@
         });
 
         if (!hasValidCurrent) {
-          const fallback = Object.keys(optionsMap).find(key => unlocked[select.id.includes('color') ? 'color' : select.id.includes('skin') ? 'skin' : 'food'].includes(key)) || Object.keys(optionsMap)[0];
-          select.value = fallback;
+          const fallback = Object.keys(optionsMap).find(key => unlocked[keyName].includes(key)) || Object.keys(optionsMap)[0];
+          if (fallback) {
+            select.value = fallback;
+          }
         }
       }
 
@@ -714,7 +726,7 @@
       return {
         color: colorThemes[selectedColorKey] || colorThemes.classic,
         skin: skinThemes[selectedSkinKey] || skinThemes.classic,
-        food: foodThemes[selectedFoodKey] || foodThemes.classic
+        food: foodThemes[selectedFoodKey] || foodThemes.apple
       };
     }
 
@@ -722,8 +734,11 @@
       return maps[currentMap].walls.some(([wallX, wallY]) => wallX === x && wallY === y);
     }
 
-    function snakeHitsCell(x, y) {
-      return snake.some(part => part.x === x && part.y === y);
+    function snakeHitsCell(x, y, ignoreTail = false) {
+      return snake.some((part, index) => {
+        if (ignoreTail && index === snake.length - 1) return false;
+        return part.x === x && part.y === y;
+      });
     }
 
     function randomFoodCell() {
@@ -731,7 +746,7 @@
       while (tries < 500) {
         const x = Math.floor(Math.random() * tileCount);
         const y = Math.floor(Math.random() * tileCount);
-        if (!wallExists(x, y) && !snakeHitsCell(x, y)) {
+        if (!wallExists(x, y) && !snakeHitsCell(x, y, true)) {
           return { x, y };
         }
         tries++;
@@ -798,6 +813,28 @@
             ctx.arc(px, py, 2.2, 0, Math.PI * 2);
             ctx.fill();
           }
+          break;
+        case 'dragon':
+          ctx.strokeStyle = accent;
+          ctx.lineWidth = 1.7;
+          ctx.beginPath();
+          ctx.moveTo(x + 3, y + size * 0.7);
+          ctx.lineTo(x + size * 0.5, y + size * 0.25);
+          ctx.lineTo(x + size - 3, y + size * 0.7);
+          ctx.stroke();
+          break;
+        case 'stealth':
+          ctx.fillStyle = 'rgba(7, 12, 20, 0.28)';
+          ctx.fillRect(x + size * 0.22, y + size * 0.2, size * 0.56, size * 0.46);
+          break;
+        case 'prism':
+          ctx.strokeStyle = accent;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(x + 5, y + size - 4);
+          ctx.lineTo(x + size * 0.5, y + 4);
+          ctx.lineTo(x + size - 5, y + size - 4);
+          ctx.stroke();
           break;
         default:
           ctx.fillStyle = 'rgba(255,255,255,0.18)';
@@ -895,7 +932,7 @@
       ctx.stroke();
       ctx.restore();
 
-      snake.slice(1).forEach((segment, index) => {
+      snake.slice(1).forEach((segment) => {
         const x = segment.x * gridSize + 1;
         const y = segment.y * gridSize + 1;
         const size = gridSize - 2;
@@ -903,6 +940,287 @@
       });
 
       drawHeadSegment(snake[0].x, snake[0].y);
+    }
+
+    function drawLeaf(x, y, scale = 1) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(-0.7);
+      ctx.fillStyle = '#3bbd5d';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 5 * scale, 9 * scale, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawFoodShape(theme, radius, pulse) {
+      const colors = theme.colors;
+      const primary = colors[2];
+      const dark = colors[4];
+      const highlight = colors[0];
+
+      switch (theme.shape) {
+        case 'apple': {
+          const g = ctx.createRadialGradient(-4, -6, 4, 0, 0, radius * 1.4);
+          g.addColorStop(0, highlight);
+          g.addColorStop(0.4, colors[1]);
+          g.addColorStop(1, primary);
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(0, 0, radius * 0.82 * pulse, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#4baa61';
+          ctx.beginPath();
+          ctx.moveTo(0, -radius * 0.5);
+          ctx.quadraticCurveTo(7, -radius * 0.8, 4, -radius * 1.2);
+          ctx.quadraticCurveTo(0, -radius * 1.4, -4, -radius * 1.2);
+          ctx.quadraticCurveTo(-7, -radius * 0.8, 0, -radius * 0.5);
+          ctx.fill();
+          ctx.strokeStyle = '#2d6a35';
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(0, -radius * 0.85);
+          ctx.lineTo(0, -radius * 1.35);
+          ctx.stroke();
+          break;
+        }
+        case 'berry': {
+          const berryColors = [colors[2], colors[1], colors[3]];
+          for (let i = 0; i < 3; i++) {
+            const offsetX = (i - 1) * radius * 0.28;
+            const offsetY = i === 1 ? -radius * 0.1 : radius * 0.2;
+            ctx.fillStyle = berryColors[i];
+            ctx.beginPath();
+            ctx.arc(offsetX, offsetY, radius * 0.32 * pulse, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.strokeStyle = '#e3d0ff';
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.moveTo(-radius * 0.25, 0);
+          ctx.lineTo(radius * 0.25, 0);
+          ctx.stroke();
+          break;
+        }
+        case 'lemon': {
+          const g = ctx.createRadialGradient(-3, -5, 2, 0, 0, radius * 1.3);
+          g.addColorStop(0, highlight);
+          g.addColorStop(0.45, colors[2]);
+          g.addColorStop(1, colors[3]);
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, radius * 0.78 * pulse, radius * 0.9, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+          ctx.lineWidth = 1.5;
+          for (let i = 0; i < 5; i++) {
+            const start = -radius * 0.7 + i * (radius * 1.4 / 5);
+            ctx.beginPath();
+            ctx.moveTo(start, -radius * 0.82);
+            ctx.lineTo(start, radius * 0.82);
+            ctx.stroke();
+          }
+          break;
+        }
+        case 'grape': {
+          const spots = [[0, 0], [-10, -4], [10, -4], [-12, 10], [12, 10], [0, 14], [-6, 20], [6, 20]];
+          ctx.fillStyle = colors[2];
+          spots.forEach(([x, y]) => {
+            ctx.beginPath();
+            ctx.arc(x * 0.6, y * 0.55, radius * 0.14 * pulse, 0, Math.PI * 2);
+            ctx.fill();
+          });
+          ctx.strokeStyle = '#efe2ff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(-radius * 0.42, -radius * 0.25);
+          ctx.quadraticCurveTo(0, -radius * 0.8, radius * 0.42, -radius * 0.25);
+          ctx.stroke();
+          break;
+        }
+        case 'orange': {
+          const g = ctx.createRadialGradient(-6, -5, 2, 0, 0, radius * 1.3);
+          g.addColorStop(0, highlight);
+          g.addColorStop(0.4, colors[2]);
+          g.addColorStop(1, colors[3]);
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(0, 0, radius * 0.84 * pulse, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+          ctx.lineWidth = 1.35;
+          for (let i = 0; i < 6; i++) {
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(Math.cos(i * (Math.PI / 3)) * radius * 0.72, Math.sin(i * (Math.PI / 3)) * radius * 0.72);
+            ctx.stroke();
+          }
+          break;
+        }
+        case 'watermelon': {
+          ctx.fillStyle = '#43a962';
+          ctx.beginPath();
+          ctx.ellipse(0, 0, radius * 0.93 * pulse, radius * 0.85, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = colors[2];
+          ctx.beginPath();
+          ctx.ellipse(0, 2, radius * 0.72 * pulse, radius * 0.68, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#fefdf6';
+          for (let i = 0; i < 6; i++) {
+            const x = Math.cos(i * Math.PI / 3) * radius * 0.25;
+            const y = Math.sin(i * Math.PI / 3) * radius * 0.22;
+            ctx.fillRect(x, y, 2, 6);
+          }
+          break;
+        }
+        case 'peach': {
+          const g = ctx.createRadialGradient(-4, -6, 2, 0, 0, radius * 1.4);
+          g.addColorStop(0, highlight);
+          g.addColorStop(0.4, colors[2]);
+          g.addColorStop(1, colors[3]);
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, radius * 0.85 * pulse, radius * 0.7, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = 'rgba(255, 140, 117, 0.5)';
+          ctx.beginPath();
+          ctx.arc(radius * 0.22, -radius * 0.12, radius * 0.18, 0, Math.PI * 2);
+          ctx.fill();
+          drawLeaf(0, -radius * 0.5, 0.9);
+          break;
+        }
+        case 'starfruit': {
+          ctx.fillStyle = primary;
+          ctx.beginPath();
+          for (let i = 0; i < 5; i++) {
+            const angle = (i * Math.PI * 2) / 5 - Math.PI / 2;
+            const x = Math.cos(angle) * radius * 0.9;
+            const y = Math.sin(angle) * radius * 0.9;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+            const innerX = Math.cos(angle + Math.PI / 5) * radius * 0.45;
+            const innerY = Math.sin(angle + Math.PI / 5) * radius * 0.45;
+            ctx.lineTo(innerX, innerY);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = '#dfffe8';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(-radius * 0.8, 0);
+          ctx.lineTo(radius * 0.8, 0);
+          ctx.moveTo(0, -radius * 0.8);
+          ctx.lineTo(0, radius * 0.8);
+          ctx.stroke();
+          break;
+        }
+        case 'mango': {
+          const g = ctx.createRadialGradient(-4, -8, 3, 0, 0, radius * 1.5);
+          g.addColorStop(0, highlight);
+          g.addColorStop(0.4, colors[2]);
+          g.addColorStop(1, colors[3]);
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.moveTo(0, -radius * 0.9);
+          ctx.quadraticCurveTo(radius * 1.0, -radius * 0.3, radius * 0.8, radius * 0.8);
+          ctx.quadraticCurveTo(0, radius * 1.0, -radius * 0.8, radius * 0.7);
+          ctx.quadraticCurveTo(-radius * 1.0, -radius * 0.2, 0, -radius * 0.9);
+          ctx.fill();
+          drawLeaf(0, -radius * 0.8, 1.1);
+          break;
+        }
+        default:
+          ctx.fillStyle = primary;
+          ctx.beginPath();
+          ctx.arc(0, 0, radius * pulse, 0, Math.PI * 2);
+          ctx.fill();
+      }
+    }
+
+    function drawFood() {
+      const theme = getCurrentTheme().food;
+      const x = food.x * gridSize + gridSize / 2;
+      const y = food.y * gridSize + gridSize / 2;
+      const radius = gridSize / 2 - 2;
+      const pulse = 1 + Math.sin(Date.now() * 0.01) * 0.18;
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.shadowBlur = 25;
+      ctx.shadowColor = theme.glow;
+      drawFoodShape(theme, radius, pulse);
+      ctx.restore();
+    }
+
+    function gameOver() {
+      clearInterval(gameInterval);
+      gameInterval = null;
+      boardOverlay.textContent = 'Game Over';
+      boardOverlay.classList.remove('hidden');
+      setStatus('Game Over', 'danger');
+      saveProgress();
+    }
+
+    function setUpMapReset() {
+      const selectedMap = maps[currentMap];
+      snake = selectedMap.spawn.map(segment => ({ ...segment }));
+      dx = selectedMap.direction.x;
+      dy = selectedMap.direction.y;
+      nextDx = dx;
+      nextDy = dy;
+      food = randomFoodCell();
+      score = 0;
+      scoreEl.textContent = '0';
+      boardOverlay.classList.add('hidden');
+      setStatus('Map Ready', 'warn');
+      render();
+    }
+
+    function updateScore() {
+      scoreEl.textContent = score;
+      if (score > highScore) {
+        highScore = score;
+        updateHighScoreDisplay();
+      }
+    }
+
+    function startGame() {
+      clearInterval(gameInterval);
+      currentMap = mapSelect.value;
+      currentDifficulty = difficultySelect.value;
+      setUpMapReset();
+      setStatus('Playing');
+      gameInterval = setInterval(tick, difficultySettings[currentDifficulty] || difficultySettings.medium);
+    }
+
+    function tick() {
+      dx = nextDx;
+      dy = nextDy;
+      const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+
+      if (head.x < 0 || head.y < 0 || head.x >= tileCount || head.y >= tileCount) {
+        gameOver();
+        return;
+      }
+
+      if (wallExists(head.x, head.y) || snakeHitsCell(head.x, head.y, true)) {
+        gameOver();
+        return;
+      }
+
+      const ateFood = head.x === food.x && head.y === food.y;
+      snake.unshift(head);
+
+      if (!ateFood) {
+        snake.pop();
+      } else {
+        score += 10;
+        updateScore();
+        food = randomFoodCell();
+      }
+
+      render();
     }
 
     function render() {
@@ -931,156 +1249,63 @@
       drawFood();
     }
 
-    function drawFood() {
-      const theme = getCurrentTheme().food;
-      const x = food.x * gridSize + gridSize / 2;
-      const y = food.y * gridSize + gridSize / 2;
-      const radius = gridSize / 2 - 2;
-      const pulse = 1 + Math.sin(Date.now() * 0.01) * 0.18;
-
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.shadowBlur = 25;
-      ctx.shadowColor = theme.glow;
-
-      const glow = ctx.createRadialGradient(0, 0, 2, 0, 0, radius * 2.4);
-      glow.addColorStop(0, theme.colors[0]);
-      glow.addColorStop(0.18, theme.colors[1]);
-      glow.addColorStop(0.4, theme.colors[2]);
-      glow.addColorStop(0.75, theme.colors[3]);
-      glow.addColorStop(1, theme.colors[4]);
-
-      ctx.fillStyle = glow;
-      ctx.beginPath();
-      ctx.arc(0, 0, radius * pulse, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.shadowBlur = 0;
-      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(0, 0, radius * 1.15, 0, Math.PI * 2);
-      ctx.stroke();
-
-      ctx.fillStyle = 'rgba(255, 250, 200, 0.9)';
-      ctx.beginPath();
-      ctx.moveTo(0, -radius * 0.65);
-      ctx.lineTo(radius * 0.7, 0);
-      ctx.lineTo(0, radius * 0.65);
-      ctx.lineTo(-radius * 0.7, 0);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.restore();
-    }
-
-    function gameOver() {
-      clearInterval(gameInterval);
-      gameInterval = null;
-      boardOverlay.textContent = 'Game Over';
-      boardOverlay.classList.remove('hidden');
-      setStatus('Game Over', 'danger');
-      saveProgress();
-    }
-
-    function setUpMapReset() {
-      const selectedMap = maps[currentMap];
-      snake = selectedMap.spawn.map(segment => ({ ...segment }));
-      dx = selectedMap.direction.x;
-      dy = selectedMap.direction.y;
-      nextDx = dx;
-      nextDy = dy;
-      food = randomFoodCell();
-      score = 0;
-      scoreEl.textContent = '0';
-      boardOverlay.classList.add('hidden');
-      setStatus('Map Ready', 'warn');
-      render();
-    }
-
-    function startGame() {
-      clearInterval(gameInterval);
-      syncMapAndDirection();
-      score = 0;
-      scoreEl.textContent = '0';
-      boardOverlay.classList.add('hidden');
-      setStatus('Playing');
-      gameInterval = setInterval(gameTick, difficultySettings[currentDifficulty]);
-    }
-
-    function gameTick() {
-      const head = { x: snake[0].x + nextDx, y: snake[0].y + nextDy };
-
-      if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
-        gameOver();
-        return;
-      }
-
-      if (wallExists(head.x, head.y)) {
-        gameOver();
-        return;
-      }
-
-      for (let i = 0; i < snake.length; i++) {
-        if (snake[i].x === head.x && snake[i].y === head.y) {
-          gameOver();
-          return;
-        }
-      }
-
-      dx = nextDx;
-      dy = nextDy;
-      snake.unshift(head);
-
-      if (head.x === food.x && head.y === food.y) {
-        score += 10;
-        scoreEl.textContent = score;
-        if (score > highScore) {
-          highScore = score;
-          updateHighScoreDisplay();
-        }
-        food = randomFoodCell();
-      } else {
-        snake.pop();
-      }
-
-      render();
-    }
-
-    function changeDirection(newDx, newDy) {
-      if (newDx === -dx && newDy === -dy && snake.length > 1) return;
+    function queueDirection(newDx, newDy) {
+      if ((newDx === 0 && newDy === 0) || (newDx === -dx && newDy === -dy)) return;
       nextDx = newDx;
       nextDy = newDy;
     }
 
-    function handleSwipeStart(event) {
-      const point = event.touches ? event.touches[0] : event;
-      swipeStart = { x: point.clientX, y: point.clientY };
+    function handleDirectionInput(key) {
+      switch (key) {
+        case 'ArrowUp':
+        case 'w':
+        case 'W':
+          queueDirection(0, -1);
+          break;
+        case 'ArrowDown':
+        case 's':
+        case 'S':
+          queueDirection(0, 1);
+          break;
+        case 'ArrowLeft':
+        case 'a':
+        case 'A':
+          queueDirection(-1, 0);
+          break;
+        case 'ArrowRight':
+        case 'd':
+        case 'D':
+          queueDirection(1, 0);
+          break;
+      }
     }
 
-    function handleSwipeEnd(event) {
+    function handleTouchStart(event) {
+      const touch = event.touches[0];
+      swipeStart = { x: touch.clientX, y: touch.clientY };
+    }
+
+    function handleTouchEnd(event) {
       if (!swipeStart) return;
-      const point = event.changedTouches ? event.changedTouches[0] : event;
-      const deltaX = point.clientX - swipeStart.x;
-      const deltaY = point.clientY - swipeStart.y;
-      const threshold = 24;
+      const touch = event.changedTouches[0];
+      const dxTouch = touch.clientX - swipeStart.x;
+      const dyTouch = touch.clientY - swipeStart.y;
+      const absX = Math.abs(dxTouch);
+      const absY = Math.abs(dyTouch);
 
-      if (Math.abs(deltaX) < threshold && Math.abs(deltaY) < threshold) {
-        swipeStart = null;
-        return;
-      }
+      if (Math.max(absX, absY) < 20) return;
 
-      if (Math.abs(deltaX) > Math.abs(deltaY)) {
-        changeDirection(deltaX > 0 ? 1 : -1, 0);
+      if (absX > absY) {
+        queueDirection(dxTouch > 0 ? 1 : -1, 0);
       } else {
-        changeDirection(0, deltaY > 0 ? 1 : -1);
+        queueDirection(0, dyTouch > 0 ? 1 : -1);
       }
 
       swipeStart = null;
     }
 
-    mapSelect.addEventListener('change', () => {
-      currentMap = mapSelect.value;
+    difficultySelect.addEventListener('change', () => {
+      currentDifficulty = difficultySelect.value;
       if (gameInterval) {
         startGame();
       } else {
@@ -1088,13 +1313,12 @@
       }
     });
 
-    difficultySelect.addEventListener('change', () => {
-      currentDifficulty = difficultySelect.value;
-      if (gameInterval) startGame();
-      else setStatus('Ready');
+    mapSelect.addEventListener('change', () => {
+      currentMap = mapSelect.value;
+      setUpMapReset();
     });
 
-    document.getElementById('btn-start').addEventListener('click', startGame);
+    btnStart.addEventListener('click', startGame);
     btnCustomize.addEventListener('click', openCustomizeMenu);
     closeCustomize.addEventListener('click', closeCustomizeMenu);
     saveCustomize.addEventListener('click', applyChosenCustomization);
@@ -1102,20 +1326,12 @@
       if (event.target === customizeModal) closeCustomizeMenu();
     });
 
-    window.addEventListener('keydown', (event) => {
-      switch (event.key) {
-        case 'ArrowUp': case 'w': case 'W': changeDirection(0, -1); break;
-        case 'ArrowDown': case 's': case 'S': changeDirection(0, 1); break;
-        case 'ArrowLeft': case 'a': case 'A': changeDirection(-1, 0); break;
-        case 'ArrowRight': case 'd': case 'D': changeDirection(1, 0); break;
-      }
-    });
-
-    boardFrame.addEventListener('pointerdown', handleSwipeStart);
-    boardFrame.addEventListener('pointerup', handleSwipeEnd);
+    document.addEventListener('keydown', (event) => handleDirectionInput(event.key));
+    boardFrame.addEventListener('touchstart', handleTouchStart, { passive: true });
+    boardFrame.addEventListener('touchend', handleTouchEnd, { passive: true });
 
     loadProgress();
-    highScoreEl.textContent = highScore;
+    updateHighScoreDisplay();
     populateCustomizationOptions();
     setUpMapReset();
   </script>

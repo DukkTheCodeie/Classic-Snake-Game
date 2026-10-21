@@ -292,7 +292,9 @@
     .customize-modal.visible { opacity: 1; pointer-events: auto; }
 
     .customize-panel {
-      width: min(92vw, 520px);
+      width: min(92vw, 620px);
+      max-height: 90vh;
+      overflow: auto;
       background: linear-gradient(180deg, rgba(20, 27, 41, 0.96), rgba(12, 16, 26, 0.96));
       border: 1px solid rgba(157, 169, 194, 0.18);
       border-radius: 22px;
@@ -335,7 +337,8 @@
       color: var(--muted);
     }
 
-    .custom-row select {
+    .custom-row select,
+    .custom-row input {
       width: 100%;
       background: rgba(9, 15, 26, 0.7);
       border: 1px solid rgba(117, 225, 255, 0.32);
@@ -349,11 +352,56 @@
 
     .customize-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
 
+    .dev-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px 12px;
+      margin-top: 4px;
+    }
+
+    .dev-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .dev-toggle input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--green-2);
+      cursor: pointer;
+    }
+
+    .dev-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: rgba(110, 247, 178, 0.12);
+      border: 1px solid rgba(110, 247, 178, 0.35);
+      color: var(--green-1);
+      margin-bottom: 12px;
+    }
+
     @media (max-width: 800px) {
       #game-container { flex-direction: column; align-items: center; }
       .side-panel { width: min(100%, 420px); }
       .board-frame { width: 100%; }
       canvas { width: min(82vw, 460px); }
+      .dev-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -421,26 +469,57 @@
   <div class="customize-modal" id="customize-modal" aria-hidden="true">
     <div class="customize-panel" role="dialog" aria-modal="true" aria-labelledby="customize-title">
       <div class="customize-header">
-        <h2 id="customize-title">Customize</h2>
+        <h2 id="customize-title">Customize + Dev</h2>
         <button class="close-btn" id="close-customize" aria-label="Close customize menu">×</button>
       </div>
 
       <div class="customize-grid">
         <div class="custom-row">
+          <div class="dev-pill">Dev Code: 1923</div>
+          <label for="dev-code-input">Enter dev code</label>
+          <input id="dev-code-input" type="text" maxlength="4" placeholder="1923" />
+        </div>
+
+        <div class="custom-row">
           <label for="snake-color-select">Snake Color</label>
           <select id="snake-color-select"></select>
         </div>
+
         <div class="custom-row">
           <label for="snake-skin-select">Snake Skin</label>
           <select id="snake-skin-select"></select>
         </div>
+
         <div class="custom-row">
           <label for="food-style-select">Food Style</label>
           <select id="food-style-select"></select>
         </div>
+
+        <div class="custom-row">
+          <label>Dev Controls</label>
+          <div class="dev-grid">
+            <label class="dev-toggle"><span>God mode</span><input type="checkbox" id="dev-god" /></label>
+            <label class="dev-toggle"><span>No walls</span><input type="checkbox" id="dev-no-walls" /></label>
+            <label class="dev-toggle"><span>Ghost mode</span><input type="checkbox" id="dev-ghost" /></label>
+            <label class="dev-toggle"><span>Auto eat</span><input type="checkbox" id="dev-auto-eat" /></label>
+            <label class="dev-toggle"><span>Slow motion</span><input type="checkbox" id="dev-slow" /></label>
+            <label class="dev-toggle"><span>Show grid</span><input type="checkbox" id="dev-grid" /></label>
+          </div>
+        </div>
+
+        <div class="custom-row">
+          <label for="dev-speed">Speed Multiplier</label>
+          <input id="dev-speed" type="range" min="0.5" max="3" step="0.1" value="1" />
+        </div>
+
+        <div class="custom-row">
+          <label for="dev-grow">Growth</label>
+          <input id="dev-grow" type="number" min="1" max="50" value="5" />
+        </div>
       </div>
 
       <div class="customize-actions">
+        <button class="btn" id="dev-apply">Apply</button>
         <button class="btn" id="save-customize">Save</button>
       </div>
     </div>
@@ -455,7 +534,6 @@
     const mapSelect = document.getElementById('map-select');
     const statusPill = document.getElementById('status-pill');
     const boardOverlay = document.getElementById('board-overlay');
-    const boardFrame = document.getElementById('board-frame');
     const customizeModal = document.getElementById('customize-modal');
     const closeCustomize = document.getElementById('close-customize');
     const saveCustomize = document.getElementById('save-customize');
@@ -464,11 +542,14 @@
     const snakeColorSelect = document.getElementById('snake-color-select');
     const snakeSkinSelect = document.getElementById('snake-skin-select');
     const foodStyleSelect = document.getElementById('food-style-select');
+    const devCodeInput = document.getElementById('dev-code-input');
+    const devApplyBtn = document.getElementById('dev-apply');
 
     const STORAGE_KEY = 'classic-snake-progress-v1';
     const gridSize = 20;
     const tileCount = canvas.width / gridSize;
-    const difficultySettings = { easy: 130, medium: 100, hard: 75, insane: 55 };
+    const difficultySettings = { easy: 135, medium: 100, hard: 75, insane: 55 };
+    const DEV_CODE = '1923';
 
     const colorThemes = {
       classic: { label: 'Classic Green', minScore: 0, head: ['#b7ff7a', '#55ff88', '#1bcf73'], body: ['#67ffd5', '#21e6b2', '#00b7d8'] },
@@ -594,34 +675,29 @@
 
     let snake = [{ x: 10, y: 10 }];
     let food = { x: 15, y: 15 };
+    let score = 0;
+    let highScore = 0;
     let dx = 1;
     let dy = 0;
     let nextDx = 1;
     let nextDy = 0;
-    let score = 0;
-    let highScore = 0;
-    let gameInterval = null;
-    let currentMap = mapSelect.value;
-    let currentDifficulty = difficultySelect.value;
+    let currentMap = 'classic';
+    let currentDifficulty = 'medium';
     let selectedColorKey = 'classic';
     let selectedSkinKey = 'classic';
     let selectedFoodKey = 'apple';
-    let swipeStart = null;
-
-    function roundedRectPath(x, y, width, height, radius) {
-      const r = Math.min(radius, width / 2, height / 2);
-      ctx.beginPath();
-      ctx.moveTo(x + r, y);
-      ctx.lineTo(x + width - r, y);
-      ctx.quadraticCurveTo(x + width, y, x + width, y + r);
-      ctx.lineTo(x + width, y + height - r);
-      ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
-      ctx.lineTo(x + r, y + height);
-      ctx.quadraticCurveTo(x, y + height, x, y + height - r);
-      ctx.lineTo(x, y + r);
-      ctx.quadraticCurveTo(x, y, x + r, y);
-      ctx.closePath();
-    }
+    let gameInterval = null;
+    let gameRunning = false;
+    let devEnabled = false;
+    let devState = {
+      god: false,
+      noWalls: false,
+      ghost: false,
+      autoEat: false,
+      slow: false,
+      grid: false,
+      speedMultiplier: 1
+    };
 
     function loadProgress() {
       try {
@@ -646,16 +722,9 @@
       }));
     }
 
-    function getUnlockedOptions() {
-      return {
-        color: Object.entries(colorThemes).filter(([key, theme]) => highScore >= theme.minScore).map(([key]) => key),
-        skin: Object.entries(skinThemes).filter(([key, theme]) => highScore >= theme.minScore).map(([key]) => key),
-        food: Object.entries(foodThemes).filter(([key, theme]) => highScore >= theme.minScore).map(([key]) => key)
-      };
-    }
-
     function updateHighScoreDisplay() {
       highScoreEl.textContent = highScore;
+      scoreEl.textContent = score;
       saveProgress();
     }
 
@@ -666,10 +735,17 @@
       if (kind === 'danger') statusPill.classList.add('danger');
     }
 
+    function getUnlockedOptions() {
+      return {
+        color: Object.entries(colorThemes).filter(([key, theme]) => highScore >= theme.minScore).map(([key]) => key),
+        skin: Object.entries(skinThemes).filter(([key, theme]) => highScore >= theme.minScore).map(([key]) => key),
+        food: Object.entries(foodThemes).filter(([key, theme]) => highScore >= theme.minScore).map(([key]) => key)
+      };
+    }
+
     function populateCustomizationOptions() {
       const unlocked = getUnlockedOptions();
-
-      function buildOptions(select, optionsMap, currentValue) {
+      const buildOptions = (select, optionsMap, currentValue) => {
         select.innerHTML = '';
         let hasValidCurrent = false;
         const keyName = select.id.includes('color') ? 'color' : select.id.includes('skin') ? 'skin' : 'food';
@@ -680,22 +756,18 @@
           optionEl.value = key;
           optionEl.textContent = `${option.label}${unlockedForThis ? '' : ' (Locked: ' + option.minScore + ')'}`;
           optionEl.disabled = !unlockedForThis;
-
           if (key === currentValue && unlockedForThis) {
             optionEl.selected = true;
             hasValidCurrent = true;
           }
-
           select.appendChild(optionEl);
         });
 
         if (!hasValidCurrent) {
-          const fallback = Object.keys(optionsMap).find(key => unlocked[keyName].includes(key)) || Object.keys(optionsMap)[0];
-          if (fallback) {
-            select.value = fallback;
-          }
+          const fallback = Object.keys(optionsMap).find((key) => unlocked[keyName].includes(key)) || Object.keys(optionsMap)[0];
+          if (fallback) select.value = fallback;
         }
-      }
+      };
 
       buildOptions(snakeColorSelect, colorThemes, selectedColorKey);
       buildOptions(snakeSkinSelect, skinThemes, selectedSkinKey);
@@ -764,6 +836,125 @@
       food = randomFoodCell();
     }
 
+    function startGame() {
+      syncMapAndDirection();
+      score = 0;
+      gameRunning = true;
+      boardOverlay.classList.add('hidden');
+      updateHighScoreDisplay();
+      setStatus('Running');
+      clearInterval(gameInterval);
+      const tick = Math.max(35, difficultySettings[currentDifficulty] / (devState.speedMultiplier || 1));
+      gameInterval = setInterval(stepGame, tick);
+    }
+
+    function endGame() {
+      gameRunning = false;
+      clearInterval(gameInterval);
+      boardOverlay.textContent = devState.god ? 'Cheat Mode' : 'Game Over';
+      boardOverlay.classList.remove('hidden');
+      setStatus('Game Over', 'danger');
+      if (score > highScore) {
+        highScore = score;
+        updateHighScoreDisplay();
+      }
+    }
+
+    function setSpeedMultiplier(multiplier) {
+      devState.speedMultiplier = Number(multiplier) || 1;
+      if (gameRunning) {
+        clearInterval(gameInterval);
+        const tick = Math.max(35, difficultySettings[currentDifficulty] / devState.speedMultiplier);
+        gameInterval = setInterval(stepGame, tick);
+      }
+    }
+
+    function changeDirection(newDx, newDy) {
+      if (snake.length > 1 && newDx === -dx && newDy === -dy) return;
+      nextDx = newDx;
+      nextDy = newDy;
+    }
+
+    function stepGame() {
+      if (!gameRunning) return;
+
+      dx = nextDx;
+      dy = nextDy;
+      const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+
+      if (devState.noWalls) {
+        if (head.x < 0) head.x = tileCount - 1;
+        if (head.y < 0) head.y = tileCount - 1;
+        if (head.x >= tileCount) head.x = 0;
+        if (head.y >= tileCount) head.y = 0;
+      } else if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount || wallExists(head.x, head.y)) {
+        if (devState.god) {
+          head.x = ((head.x % tileCount) + tileCount) % tileCount;
+          head.y = ((head.y % tileCount) + tileCount) % tileCount;
+        } else {
+          endGame();
+          return;
+        }
+      }
+
+      const willEat = head.x === food.x && head.y === food.y;
+      if (!devState.ghost && snakeHitsCell(head.x, head.y, true) && !(willEat && head.x === food.x && head.y === food.y)) {
+        if (devState.god) {
+          // ignore crash while god mode is enabled
+        } else {
+          endGame();
+          return;
+        }
+      }
+
+      snake.unshift(head);
+      if (willEat) {
+        score += devState.autoEat ? 2 : 1;
+        if (score > highScore) {
+          highScore = score;
+          updateHighScoreDisplay();
+        }
+        food = randomFoodCell();
+        if (devState.autoEat) {
+          score += 1;
+          if (score > highScore) highScore = score;
+          food = randomFoodCell();
+        }
+      } else {
+        snake.pop();
+      }
+
+      if (devState.autoEat) {
+        food = randomFoodCell();
+      }
+
+      if (score > highScore) {
+        highScore = score;
+      }
+
+      scoreEl.textContent = score;
+      highScoreEl.textContent = highScore;
+      render();
+    }
+
+    function drawGrid() {
+      if (!devState.grid) return;
+      ctx.save();
+      ctx.strokeStyle = 'rgba(121, 232, 255, 0.12)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= tileCount; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * gridSize + 0.5, 0);
+        ctx.lineTo(i * gridSize + 0.5, canvas.height);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, i * gridSize + 0.5);
+        ctx.lineTo(canvas.width, i * gridSize + 0.5);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
     function drawWalls() {
       const wallColor = '#0e3b7a';
       const wallGlow = '#6ce3ff';
@@ -771,20 +962,80 @@
         const px = wallX * gridSize + 1;
         const py = wallY * gridSize + 1;
         const size = gridSize - 2;
-
         ctx.fillStyle = wallColor;
         ctx.fillRect(px, py, size, size);
-
         ctx.strokeStyle = wallGlow;
         ctx.lineWidth = 1.5;
         ctx.strokeRect(px + 1, py + 1, size - 2, size - 2);
       });
     }
 
+    function roundedRectPath(x, y, width, height, radius) {
+      const r = Math.min(radius, width / 2, height / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + width - r, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+      ctx.lineTo(x + width, y + height - r);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+      ctx.lineTo(x + r, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    function drawHeadSegment(segmentX, segmentY) {
+      const theme = getCurrentTheme();
+      const x = segmentX * gridSize + 1;
+      const y = segmentY * gridSize + 1;
+      const size = gridSize - 2;
+      const radius = Math.min(8, size * 0.45);
+
+      const headGradient = ctx.createLinearGradient(x, y, x + size, y + size);
+      headGradient.addColorStop(0, theme.color.head[0]);
+      headGradient.addColorStop(0.35, theme.color.head[1]);
+      headGradient.addColorStop(1, theme.color.head[2]);
+
+      roundedRectPath(x, y, size, size, radius + 2);
+      ctx.fillStyle = headGradient;
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(10, 16, 20, 0.64)';
+      const eyeY = y + size * 0.32;
+      const eyeX1 = x + size * 0.28;
+      const eyeX2 = x + size * 0.68;
+      const eyeSizeX = size * 0.12;
+      const eyeSizeY = size * 0.12;
+
+      ctx.beginPath();
+      ctx.ellipse(eyeX1 + (dx === 1 ? 2.5 : dx === -1 ? -2.5 : 0), eyeY + (dy === 1 ? 2.5 : dy === -1 ? -2.5 : 0), eyeSizeX, eyeSizeY, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(eyeX2 + (dx === 1 ? 2.5 : dx === -1 ? -2.5 : 0), eyeY + (dy === 1 ? 2.5 : dy === -1 ? -2.5 : 0), eyeSizeX, eyeSizeY, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#f6fffe';
+      ctx.beginPath();
+      ctx.ellipse(eyeX1 + (dx === 1 ? 3.5 : dx === -1 ? -3.5 : 0), eyeY + (dy === 1 ? 3.5 : dy === -1 ? -3.5 : 0), eyeSizeX * 0.38, eyeSizeY * 0.38, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(eyeX2 + (dx === 1 ? 3.5 : dx === -1 ? -3.5 : 0), eyeY + (dy === 1 ? 3.5 : dy === -1 ? -3.5 : 0), eyeSizeX * 0.38, eyeSizeY * 0.38, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      const mouthX = x + size / 2 + dx * (size * 0.42);
+      const mouthY = y + size / 2 + dy * (size * 0.42);
+      const mouthAngle = Math.atan2(dy, dx) || 0;
+      ctx.strokeStyle = 'rgba(22, 10, 14, 0.9)';
+      ctx.lineWidth = 2.3;
+      ctx.beginPath();
+      ctx.arc(mouthX, mouthY, size * 0.13, mouthAngle - 0.7, mouthAngle + 0.7);
+      ctx.stroke();
+    }
+
     function drawSkinDetails(x, y, size, isHead = false) {
       const theme = getCurrentTheme();
       const accent = theme.skin.accent;
-
       ctx.save();
       switch (selectedSkinKey) {
         case 'pulse':
@@ -848,56 +1099,6 @@
       ctx.restore();
     }
 
-    function drawHeadSegment(segmentX, segmentY) {
-      const theme = getCurrentTheme();
-      const x = segmentX * gridSize + 1;
-      const y = segmentY * gridSize + 1;
-      const size = gridSize - 2;
-      const radius = Math.min(8, size * 0.45);
-
-      const headGradient = ctx.createLinearGradient(x, y, x + size, y + size);
-      headGradient.addColorStop(0, theme.color.head[0]);
-      headGradient.addColorStop(0.35, theme.color.head[1]);
-      headGradient.addColorStop(1, theme.color.head[2]);
-
-      roundedRectPath(x, y, size, size, radius + 2);
-      ctx.fillStyle = headGradient;
-      ctx.fill();
-
-      drawSkinDetails(x, y, size, true);
-
-      ctx.fillStyle = 'rgba(10, 16, 20, 0.64)';
-      const eyeY = y + size * 0.32;
-      const eyeX1 = x + size * 0.28;
-      const eyeX2 = x + size * 0.68;
-      const eyeSizeX = size * 0.12;
-      const eyeSizeY = size * 0.12;
-
-      ctx.beginPath();
-      ctx.ellipse(eyeX1 + (dx === 1 ? 2.5 : dx === -1 ? -2.5 : 0), eyeY + (dy === 1 ? 2.5 : dy === -1 ? -2.5 : 0), eyeSizeX, eyeSizeY, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.ellipse(eyeX2 + (dx === 1 ? 2.5 : dx === -1 ? -2.5 : 0), eyeY + (dy === 1 ? 2.5 : dy === -1 ? -2.5 : 0), eyeSizeX, eyeSizeY, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = '#f6fffe';
-      ctx.beginPath();
-      ctx.ellipse(eyeX1 + (dx === 1 ? 3.5 : dx === -1 ? -3.5 : 0), eyeY + (dy === 1 ? 3.5 : dy === -1 ? -3.5 : 0), eyeSizeX * 0.38, eyeSizeY * 0.38, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.ellipse(eyeX2 + (dx === 1 ? 3.5 : dx === -1 ? -3.5 : 0), eyeY + (dy === 1 ? 3.5 : dy === -1 ? -3.5 : 0), eyeSizeX * 0.38, eyeSizeY * 0.38, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      const mouthX = x + size / 2 + dx * (size * 0.42);
-      const mouthY = y + size / 2 + dy * (size * 0.42);
-      const mouthAngle = Math.atan2(dy, dx) || 0;
-      ctx.strokeStyle = 'rgba(22, 10, 14, 0.9)';
-      ctx.lineWidth = 2.3;
-      ctx.beginPath();
-      ctx.arc(mouthX, mouthY, size * 0.13, mouthAngle - 0.7, mouthAngle + 0.7);
-      ctx.stroke();
-    }
-
     function drawSnakeBody() {
       if (snake.length === 0) return;
       const theme = getCurrentTheme();
@@ -921,11 +1122,8 @@
         const curr = points[i];
         const midX = (prev.x + curr.x) / 2;
         const midY = (prev.y + curr.y) / 2;
-        if (i === 1) {
-          ctx.lineTo(midX, midY);
-        } else {
-          ctx.quadraticCurveTo(prev.x, prev.y, midX, midY);
-        }
+        if (i === 1) ctx.lineTo(midX, midY);
+        else ctx.quadraticCurveTo(prev.x, prev.y, midX, midY);
       }
       const last = points[points.length - 1];
       ctx.lineTo(last.x, last.y);
@@ -942,21 +1140,9 @@
       drawHeadSegment(snake[0].x, snake[0].y);
     }
 
-    function drawLeaf(x, y, scale = 1) {
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(-0.7);
-      ctx.fillStyle = '#3bbd5d';
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 5 * scale, 9 * scale, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-
     function drawFoodShape(theme, radius, pulse) {
       const colors = theme.colors;
       const primary = colors[2];
-      const dark = colors[4];
       const highlight = colors[0];
 
       switch (theme.shape) {
@@ -985,355 +1171,183 @@
           break;
         }
         case 'berry': {
-          const berryColors = [colors[2], colors[1], colors[3]];
           for (let i = 0; i < 3; i++) {
             const offsetX = (i - 1) * radius * 0.28;
             const offsetY = i === 1 ? -radius * 0.1 : radius * 0.2;
-            ctx.fillStyle = berryColors[i];
+            ctx.fillStyle = [colors[2], colors[1], colors[3]][i];
             ctx.beginPath();
             ctx.arc(offsetX, offsetY, radius * 0.32 * pulse, 0, Math.PI * 2);
             ctx.fill();
           }
-          ctx.strokeStyle = '#e3d0ff';
-          ctx.lineWidth = 1.4;
-          ctx.beginPath();
-          ctx.moveTo(-radius * 0.25, 0);
-          ctx.lineTo(radius * 0.25, 0);
-          ctx.stroke();
           break;
         }
         case 'lemon': {
-          const g = ctx.createRadialGradient(-3, -5, 2, 0, 0, radius * 1.3);
-          g.addColorStop(0, highlight);
-          g.addColorStop(0.45, colors[2]);
-          g.addColorStop(1, colors[3]);
-          ctx.fillStyle = g;
+          ctx.fillStyle = '#ffe582';
           ctx.beginPath();
-          ctx.ellipse(0, 0, radius * 0.78 * pulse, radius * 0.9, 0, 0, Math.PI * 2);
+          ctx.arc(0, 0, radius * 0.75 * pulse, 0, Math.PI * 2);
           ctx.fill();
-          ctx.strokeStyle = 'rgba(255,255,255,0.7)';
-          ctx.lineWidth = 1.5;
-          for (let i = 0; i < 5; i++) {
-            const start = -radius * 0.7 + i * (radius * 1.4 / 5);
-            ctx.beginPath();
-            ctx.moveTo(start, -radius * 0.82);
-            ctx.lineTo(start, radius * 0.82);
-            ctx.stroke();
-          }
+          ctx.fillStyle = '#d4b83e';
+          ctx.beginPath();
+          ctx.arc(0, 0, radius * 0.36 * pulse, 0, Math.PI * 2);
+          ctx.fill();
           break;
         }
-        case 'grape': {
-          const spots = [[0, 0], [-10, -4], [10, -4], [-12, 10], [12, 10], [0, 14], [-6, 20], [6, 20]];
-          ctx.fillStyle = colors[2];
-          spots.forEach(([x, y]) => {
-            ctx.beginPath();
-            ctx.arc(x * 0.6, y * 0.55, radius * 0.14 * pulse, 0, Math.PI * 2);
-            ctx.fill();
-          });
-          ctx.strokeStyle = '#efe2ff';
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.moveTo(-radius * 0.42, -radius * 0.25);
-          ctx.quadraticCurveTo(0, -radius * 0.8, radius * 0.42, -radius * 0.25);
-          ctx.stroke();
-          break;
-        }
-        case 'orange': {
-          const g = ctx.createRadialGradient(-6, -5, 2, 0, 0, radius * 1.3);
-          g.addColorStop(0, highlight);
-          g.addColorStop(0.4, colors[2]);
-          g.addColorStop(1, colors[3]);
-          ctx.fillStyle = g;
-          ctx.beginPath();
-          ctx.arc(0, 0, radius * 0.84 * pulse, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.strokeStyle = 'rgba(255,255,255,0.7)';
-          ctx.lineWidth = 1.35;
-          for (let i = 0; i < 6; i++) {
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(Math.cos(i * (Math.PI / 3)) * radius * 0.72, Math.sin(i * (Math.PI / 3)) * radius * 0.72);
-            ctx.stroke();
-          }
-          break;
-        }
-        case 'watermelon': {
-          ctx.fillStyle = '#43a962';
-          ctx.beginPath();
-          ctx.ellipse(0, 0, radius * 0.93 * pulse, radius * 0.85, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = colors[2];
-          ctx.beginPath();
-          ctx.ellipse(0, 2, radius * 0.72 * pulse, radius * 0.68, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = '#fefdf6';
-          for (let i = 0; i < 6; i++) {
-            const x = Math.cos(i * Math.PI / 3) * radius * 0.25;
-            const y = Math.sin(i * Math.PI / 3) * radius * 0.22;
-            ctx.fillRect(x, y, 2, 6);
-          }
-          break;
-        }
-        case 'peach': {
-          const g = ctx.createRadialGradient(-4, -6, 2, 0, 0, radius * 1.4);
-          g.addColorStop(0, highlight);
-          g.addColorStop(0.4, colors[2]);
-          g.addColorStop(1, colors[3]);
-          ctx.fillStyle = g;
-          ctx.beginPath();
-          ctx.ellipse(0, 0, radius * 0.85 * pulse, radius * 0.7, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = 'rgba(255, 140, 117, 0.5)';
-          ctx.beginPath();
-          ctx.arc(radius * 0.22, -radius * 0.12, radius * 0.18, 0, Math.PI * 2);
-          ctx.fill();
-          drawLeaf(0, -radius * 0.5, 0.9);
-          break;
-        }
-        case 'starfruit': {
+        default: {
           ctx.fillStyle = primary;
           ctx.beginPath();
-          for (let i = 0; i < 5; i++) {
-            const angle = (i * Math.PI * 2) / 5 - Math.PI / 2;
-            const x = Math.cos(angle) * radius * 0.9;
-            const y = Math.sin(angle) * radius * 0.9;
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-            const innerX = Math.cos(angle + Math.PI / 5) * radius * 0.45;
-            const innerY = Math.sin(angle + Math.PI / 5) * radius * 0.45;
-            ctx.lineTo(innerX, innerY);
-          }
-          ctx.closePath();
+          ctx.arc(0, 0, radius * 0.72 * pulse, 0, Math.PI * 2);
           ctx.fill();
-          ctx.strokeStyle = '#dfffe8';
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.moveTo(-radius * 0.8, 0);
-          ctx.lineTo(radius * 0.8, 0);
-          ctx.moveTo(0, -radius * 0.8);
-          ctx.lineTo(0, radius * 0.8);
-          ctx.stroke();
           break;
         }
-        case 'mango': {
-          const g = ctx.createRadialGradient(-4, -8, 3, 0, 0, radius * 1.5);
-          g.addColorStop(0, highlight);
-          g.addColorStop(0.4, colors[2]);
-          g.addColorStop(1, colors[3]);
-          ctx.fillStyle = g;
-          ctx.beginPath();
-          ctx.moveTo(0, -radius * 0.9);
-          ctx.quadraticCurveTo(radius * 1.0, -radius * 0.3, radius * 0.8, radius * 0.8);
-          ctx.quadraticCurveTo(0, radius * 1.0, -radius * 0.8, radius * 0.7);
-          ctx.quadraticCurveTo(-radius * 1.0, -radius * 0.2, 0, -radius * 0.9);
-          ctx.fill();
-          drawLeaf(0, -radius * 0.8, 1.1);
-          break;
-        }
-        default:
-          ctx.fillStyle = primary;
-          ctx.beginPath();
-          ctx.arc(0, 0, radius * pulse, 0, Math.PI * 2);
-          ctx.fill();
       }
     }
 
     function drawFood() {
       const theme = getCurrentTheme().food;
-      const x = food.x * gridSize + gridSize / 2;
-      const y = food.y * gridSize + gridSize / 2;
-      const radius = gridSize / 2 - 2;
-      const pulse = 1 + Math.sin(Date.now() * 0.01) * 0.18;
+      const pulse = 1 + Math.sin(Date.now() / 150) * 0.08;
+      const cx = food.x * gridSize + gridSize / 2;
+      const cy = food.y * gridSize + gridSize / 2;
+      const radius = gridSize * 0.38;
 
       ctx.save();
-      ctx.translate(x, y);
-      ctx.shadowBlur = 25;
+      ctx.translate(cx, cy);
+      ctx.shadowBlur = 18;
       ctx.shadowColor = theme.glow;
       drawFoodShape(theme, radius, pulse);
       ctx.restore();
     }
 
-    function gameOver() {
-      clearInterval(gameInterval);
-      gameInterval = null;
-      boardOverlay.textContent = 'Game Over';
-      boardOverlay.classList.remove('hidden');
-      setStatus('Game Over', 'danger');
-      saveProgress();
-    }
-
-    function setUpMapReset() {
-      const selectedMap = maps[currentMap];
-      snake = selectedMap.spawn.map(segment => ({ ...segment }));
-      dx = selectedMap.direction.x;
-      dy = selectedMap.direction.y;
-      nextDx = dx;
-      nextDy = dy;
-      food = randomFoodCell();
-      score = 0;
-      scoreEl.textContent = '0';
-      boardOverlay.classList.add('hidden');
-      setStatus('Map Ready', 'warn');
-      render();
-    }
-
-    function updateScore() {
-      scoreEl.textContent = score;
-      if (score > highScore) {
-        highScore = score;
-        updateHighScoreDisplay();
-      }
-    }
-
-    function startGame() {
-      clearInterval(gameInterval);
-      currentMap = mapSelect.value;
-      currentDifficulty = difficultySelect.value;
-      setUpMapReset();
-      setStatus('Playing');
-      gameInterval = setInterval(tick, difficultySettings[currentDifficulty] || difficultySettings.medium);
-    }
-
-    function tick() {
-      dx = nextDx;
-      dy = nextDy;
-      const head = { x: snake[0].x + dx, y: snake[0].y + dy };
-
-      if (head.x < 0 || head.y < 0 || head.x >= tileCount || head.y >= tileCount) {
-        gameOver();
-        return;
-      }
-
-      if (wallExists(head.x, head.y) || snakeHitsCell(head.x, head.y, true)) {
-        gameOver();
-        return;
-      }
-
-      const ateFood = head.x === food.x && head.y === food.y;
-      snake.unshift(head);
-
-      if (!ateFood) {
-        snake.pop();
-      } else {
-        score += 10;
-        updateScore();
-        food = randomFoodCell();
-      }
-
-      render();
-    }
-
     function render() {
-      dx = nextDx;
-      dy = nextDy;
-
-      ctx.fillStyle = '#05060a';
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#040915';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.strokeStyle = 'rgba(0, 240, 255, 0.06)';
-      ctx.lineWidth = 1;
-      for (let i = 0; i <= tileCount; i++) {
-        ctx.beginPath();
-        ctx.moveTo(i * gridSize, 0);
-        ctx.lineTo(i * gridSize, canvas.height);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(0, i * gridSize);
-        ctx.lineTo(canvas.width, i * gridSize);
-        ctx.stroke();
-      }
-
+      drawGrid();
       drawWalls();
-      drawSnakeBody();
       drawFood();
+      drawSnakeBody();
+      scoreEl.textContent = score;
+      highScoreEl.textContent = highScore;
     }
 
-    function queueDirection(newDx, newDy) {
-      if ((newDx === 0 && newDy === 0) || (newDx === -dx && newDy === -dy)) return;
-      nextDx = newDx;
-      nextDy = newDy;
-    }
+    function handleKeydown(event) {
+      const key = event.key.toLowerCase();
+      if (key === 'arrowup' || key === 'w') changeDirection(0, -1);
+      if (key === 'arrowdown' || key === 's') changeDirection(0, 1);
+      if (key === 'arrowleft' || key === 'a') changeDirection(-1, 0);
+      if (key === 'arrowright' || key === 'd') changeDirection(1, 0);
+      if (key === ' ') {
+        event.preventDefault();
+        if (gameRunning) {
+          gameRunning = false;
+          clearInterval(gameInterval);
+          setStatus('Paused');
+        } else {
+          gameRunning = true;
+          setStatus('Running');
+          clearInterval(gameInterval);
+          const tick = Math.max(35, difficultySettings[currentDifficulty] / devState.speedMultiplier);
+          gameInterval = setInterval(stepGame, tick);
+        }
+      }
 
-    function handleDirectionInput(key) {
-      switch (key) {
-        case 'ArrowUp':
-        case 'w':
-        case 'W':
-          queueDirection(0, -1);
-          break;
-        case 'ArrowDown':
-        case 's':
-        case 'S':
-          queueDirection(0, 1);
-          break;
-        case 'ArrowLeft':
-        case 'a':
-        case 'A':
-          queueDirection(-1, 0);
-          break;
-        case 'ArrowRight':
-        case 'd':
-        case 'D':
-          queueDirection(1, 0);
-          break;
+      if (event.key >= '0' && event.key <= '9') {
+        devCodeInput.value += event.key;
+        if (devCodeInput.value.length > 4) devCodeInput.value = devCodeInput.value.slice(-4);
+      }
+
+      if (key === 'enter' && devCodeInput.value === DEV_CODE) {
+        toggleDevPanel(true);
       }
     }
 
-    function handleTouchStart(event) {
-      const touch = event.touches[0];
-      swipeStart = { x: touch.clientX, y: touch.clientY };
-    }
-
-    function handleTouchEnd(event) {
-      if (!swipeStart) return;
-      const touch = event.changedTouches[0];
-      const dxTouch = touch.clientX - swipeStart.x;
-      const dyTouch = touch.clientY - swipeStart.y;
-      const absX = Math.abs(dxTouch);
-      const absY = Math.abs(dyTouch);
-
-      if (Math.max(absX, absY) < 20) return;
-
-      if (absX > absY) {
-        queueDirection(dxTouch > 0 ? 1 : -1, 0);
+    function toggleDevPanel(forceOpen) {
+      devEnabled = forceOpen !== undefined ? forceOpen : !devEnabled;
+      if (devEnabled) {
+        openCustomizeMenu();
+        devCodeInput.value = DEV_CODE;
+        statusPill.textContent = 'Dev Mode';
+        statusPill.classList.remove('warn', 'danger');
       } else {
-        queueDirection(0, dyTouch > 0 ? 1 : -1);
+        closeCustomizeMenu();
+        devCodeInput.value = '';
       }
-
-      swipeStart = null;
     }
 
-    difficultySelect.addEventListener('change', () => {
+    function applyDevSettings() {
+      devState.god = document.getElementById('dev-god').checked;
+      devState.noWalls = document.getElementById('dev-no-walls').checked;
+      devState.ghost = document.getElementById('dev-ghost').checked;
+      devState.autoEat = document.getElementById('dev-auto-eat').checked;
+      devState.slow = document.getElementById('dev-slow').checked;
+      devState.grid = document.getElementById('dev-grid').checked;
+      devState.speedMultiplier = Number(document.getElementById('dev-speed').value) || 1;
+      setSpeedMultiplier(devState.speedMultiplier);
+      const growAmount = Number(document.getElementById('dev-grow').value) || 5;
+      if (growAmount > 0) {
+        for (let i = 0; i < growAmount; i++) {
+          snake.push({ x: snake[snake.length - 1].x, y: snake[snake.length - 1].y });
+        }
+      }
+      if (devState.slow) {
+        setStatus('Slow Mode');
+      } else if (devState.god) {
+        setStatus('God Mode');
+      } else {
+        setStatus(gameRunning ? 'Running' : 'Ready');
+      }
+      render();
+    }
+
+    function attachEvents() {
+      btnStart.addEventListener('click', startGame);
+      btnCustomize.addEventListener('click', openCustomizeMenu);
+      closeCustomize.addEventListener('click', closeCustomizeMenu);
+      saveCustomize.addEventListener('click', applyChosenCustomization);
+      devApplyBtn.addEventListener('click', () => {
+        applyDevSettings();
+        closeCustomizeMenu();
+      });
+      difficultySelect.addEventListener('change', (event) => {
+        currentDifficulty = event.target.value;
+        if (gameRunning) {
+          clearInterval(gameInterval);
+          const tick = Math.max(35, difficultySettings[currentDifficulty] / devState.speedMultiplier);
+          gameInterval = setInterval(stepGame, tick);
+        }
+      });
+      mapSelect.addEventListener('change', (event) => {
+        currentMap = event.target.value;
+        syncMapAndDirection();
+        render();
+      });
+      document.addEventListener('keydown', handleKeydown);
+      document.addEventListener('pointerdown', (event) => {
+        if (!event.target.closest('input, select, button')) {
+          const code = devCodeInput.value || '';
+          if (code === DEV_CODE) toggleDevPanel(true);
+        }
+      });
+      devCodeInput.addEventListener('input', () => {
+        if (devCodeInput.value === DEV_CODE) {
+          toggleDevPanel(true);
+        }
+      });
+    }
+
+    function initialize() {
+      loadProgress();
+      populateCustomizationOptions();
       currentDifficulty = difficultySelect.value;
-      if (gameInterval) {
-        startGame();
-      } else {
-        setUpMapReset();
-      }
-    });
-
-    mapSelect.addEventListener('change', () => {
       currentMap = mapSelect.value;
-      setUpMapReset();
-    });
+      syncMapAndDirection();
+      scoreEl.textContent = score;
+      highScoreEl.textContent = highScore;
+      render();
+      attachEvents();
+      setStatus('Ready');
+    }
 
-    btnStart.addEventListener('click', startGame);
-    btnCustomize.addEventListener('click', openCustomizeMenu);
-    closeCustomize.addEventListener('click', closeCustomizeMenu);
-    saveCustomize.addEventListener('click', applyChosenCustomization);
-    customizeModal.addEventListener('click', (event) => {
-      if (event.target === customizeModal) closeCustomizeMenu();
-    });
-
-    document.addEventListener('keydown', (event) => handleDirectionInput(event.key));
-    boardFrame.addEventListener('touchstart', handleTouchStart, { passive: true });
-    boardFrame.addEventListener('touchend', handleTouchEnd, { passive: true });
-
-    loadProgress();
-    updateHighScoreDisplay();
-    populateCustomizationOptions();
-    setUpMapReset();
+    initialize();
   </script>
 </body>
 </html>
